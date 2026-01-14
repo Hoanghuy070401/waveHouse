@@ -1,0 +1,129 @@
+plugins {
+    alias (libs.plugins.android.application)
+    alias (libs.plugins.jetbrains.kotlin.android)
+    id 'kotlin-kapt'
+    id 'com.google.dagger.hilt.android'
+}
+
+android {
+    packagingOptions {
+        pickFirst '**/libfilament-jni.so'
+        pickFirst '**/libfilament-utils-jni.so'
+        pickFirst '**/libgltfio-jni.so'
+    }
+
+    namespace 'com.ots.myapplication'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.ots.myapplication"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+            abiFilters 'armeabi-v7a'
+
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile ('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    buildFeatures {
+        viewBinding = true
+        dataBinding = true
+    }
+}
+
+dependencies {
+    implementation libs.android.sdk.map
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.androidx.activity
+    implementation libs.androidx.constraintlayout
+
+    // ReactiveX and Retrofit
+    implementation libs.rxandroid
+    implementation libs.retrofit
+    implementation libs.adapter.rxjava3
+    implementation libs.converter.gson
+    implementation libs.logging.interceptor
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+
+
+    // Gson
+    implementation libs.gson
+
+    implementation libs.androidx.lifecycle.livedata.ktx
+    implementation libs.hilt.android
+
+
+    //implementation  libs.hilt.android
+    //coroutines
+    implementation libs.kotlinx.coroutines.core
+    implementation libs.androidx.paging.runtime.ktx
+    implementation libs.androidx.paging.rxjava3
+    implementation libs.androidx.legacy.support.v4
+    implementation libs.androidx.fragment.ktx
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.androidx.activity
+    implementation libs.androidx.constraintlayout
+//    implementation libs.filament.android
+    implementation libs.androidx.media3.transformer
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+
+    implementation(libs.filament.android)
+    implementation(libs.filament.utils.android)
+    implementation(libs.filament.gltfio.android)
+
+
+    implementation 'com.github.maplibre:maplibre-navigation-android:4.0.0'
+    // CameraX
+    implementation libs.androidx.camera.core
+    implementation libs.androidx.camera.camera2
+    implementation libs.androidx.camera.lifecycle
+    implementation libs.androidx.camera.view
+
+    implementation libs.play.services.code.scanner
+
+
+
+//    // Filament
+//    implementation 'com.google.android.filament:filament-android:1.36.0'
+//    implementation 'com.google.android.filament:filament-utils-android:1.36.0'
+//    implementation 'com.google.android.filament:gltfio-android:1.36.0'
+
+
+//    implementation 'org.maplibre.gl:android-sdk:10.4.1'
+//    implementation 'com.google.android.filament:filament-utils-android:1.36.0'
+
+    //    implementation "com.gorisse.thomas.sceneform:sceneform:1.23.0"
+    implementation "io.github.sceneview:sceneview:2.2.1"
+
+
+
+    implementation "com.google.dagger:hilt-android:2.51.1"
+    kapt "com.google.dagger:hilt-compiler:2.51.1"
+
+
+
+}

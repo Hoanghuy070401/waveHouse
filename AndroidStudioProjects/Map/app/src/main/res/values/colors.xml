@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="purple_200">#F1A02A</color>
+    <color name="purple_500">#F1A02A</color>
+    <color name="purple_700">#F1A02A</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+
+    <color name="colorPrimary">#F1A02A</color>
+    <color name="colorAccent">#D6CDFE</color>
+    <color name="colorPrimaryDark">#F1A02A</color>
+    <color name="colorBackground">#EBEBEB</color>
+    <color name="colorError">#EB0000</color>
+
+
+    <color name="colorButtonActive">#FCA34D</color>
+    <color name="colorButtonInActive">#D6CDFE</color>
+
+
+    <color name="colorNavigation">#FFFFFF</color>
+
+
+    <color name="green">#4CAF50</color>
+    <color name="green_500">#00B43D</color>
+    <color name="green_600">#00A534</color>
+    <color name="green_100">#BFE8C6</color>
+    <color name="green_300">#65CB7A</color>
+    <color name="greenButton">#4EAC04</color>
+    <color name="fui_transparent">#00000000</color>
+    <color name="main_bg">#F1A02A</color>
+
+
+    <color name="orange">#FFA233</color>
+    <color name="orange_10">#1Affa233</color>
+    <color name="orange_20">#33ffa233</color>
+    <color name="orange_30">#4Dffa233</color>
+    <color name="orange_40">#66ffa233</color>
+    <color name="orange_50">#80ffa233</color>
+    <color name="orange_60">#99ffa233</color>
+    <color name="orange_70">#B3ffa233</color>
+    <color name="orange_80">#CCffa233</color>
+    <color name="orange_90">#E6ffa233</color>
+    <color name="orange_100">#FFF8EF</color>
+    <color name="orange_200">#FFF1E0</color>
+    <color name="orange_300">#FFE3C2</color>
+    <color name="orange_400">#FFCC8F</color>
+    <color name="orange_500">#FFBE70</color>
+    <color name="orange_700">#FFA233</color>
+    <color name="orange_900">#FF8B00</color>
+    <color name="orange_800">#FF8B00</color>
+
+    <color name="blue_100">#EBF4FA</color>
+    <color name="blue_200">#CCE3F1</color>
+    <color name="blue_400">#EBF4FA</color>
+    <color name="blue_600">#338DC9</color>
+    <color name="blue_800">#99C6E4</color>
+    <color name="blue_700">#0071BB</color>
+    <color name="blue_900">#003C63</color>
+    <color name="blueButton">#039DF4</color>
+    <color name="blueProcess">#21BAFF</color>
+    <color name="blueReport">#6284FF</color>
+
+
+    <!--    Red-->
+    <color name="red_900">#BB0014</color>
+    <color name="red_700">#D70028</color>
+    <color name="red_600">#E8002E</color>
+    <color name="red_500">#F7002E</color>
+    <color name="redButton">#C72929</color>
+
+
+    <color name="gray_40">#B5BEC6</color>
+    <color name="gray_100">#F5F6FA</color>
+    <color name="gray_500">#A7A8AB</color>
+    <color name="gray_200">#F1F2F5</color>
+    <color name="gray_300">#E7E8EB</color>
+    <color name="gray_400">#C5C6C9</color>
+    <color name="gray_600">#7D7E81</color>
+    <color name="gray_800">#494A4D</color>
+    <color name="gray_900">#28282B</color>
+
+
+    <color name="color_edittext">#524B6B</color>
+    <color name="color_title_edittext">#150B3D</color>
+    <color name="colorLink">#3747E9</color>
+    <color name="main_red">#F88484</color>
+    <color name="colorContact">#FFEBCC</color>
+
+
+    <color name="colorCancel">#B6B1AF</color>
+    <color name="colorLine">#F3F3F3</color>
+    <color name="colorButtonGreen">#6FC729</color>
+    <color name="colorLost">#998A8A</color>
+    <color name="colorWorking">#9BE189</color>
+
+    <color name="selected_nav_item_color">#F1A02A</color>
+    <color name="shadow_color">#adbccbff</color>
+    <color name="fragment_container_color">#f2f8ff</color>
+    <color name="transparent">#00000000</color>
+    <color name="navBarItemColor">#434343</color>
+
+</resources>

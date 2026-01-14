@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_border_10"
+        android:orientation="vertical"
+        android:paddingVertical="8dp">
+        <TextView
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="8dp"
+            android:textSize="16sp"
+            android:text="Thêm kiểu bản đồ"/>
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/edtStyleName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:textSize="14sp"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_radius_10_dp"
+            android:backgroundTint="@color/gray_200"
+            android:hint="Nhập tên bản đồ"
+            android:inputType="text"
+            android:imeOptions="actionNext"
+            android:textColor="@color/color_edittext" />
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/edtStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:textSize="14sp"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_radius_10_dp"
+            android:backgroundTint="@color/gray_200"
+            android:hint="Nhập kiểu bản đồ"
+            android:inputType="text"
+            android:imeOptions="actionNext"
+            android:textColor="@color/color_edittext" />
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:padding="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Huỷ bỏ"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/colorAccent"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirm"
+                android:layout_width="0dp"
+                android:padding="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Thêm"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/blue_700"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</layout>
