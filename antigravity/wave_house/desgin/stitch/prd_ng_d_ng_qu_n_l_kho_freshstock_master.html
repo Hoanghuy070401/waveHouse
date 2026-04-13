@@ -1,0 +1,35 @@
+# Bản Đặc tả Sản phẩm (PRD): Ứng dụng FreshStock
+
+## 1. Tổng thể điều hướng (Navigation)
+Hệ thống sử dụng Bottom Navigation với 5 tab chính:
+- 🏠 **Trang chủ**: Dashboard tổng quan.
+- 📦 **Kho hàng**: Quản lý danh mục sản phẩm và tồn kho.
+- 🛒 **Bán hàng**: Giao diện POS tối ưu tốc độ.
+- 📊 **Báo cáo**: Phân tích kinh doanh (Chỉ dành cho Owner).
+- 👤 **Tài khoản**: Thông tin cá nhân và chuyển đổi kho.
+
+## 2. Phân quyền (Role Management)
+- **Owner (Chủ kho)**: Toàn quyền quản lý, sửa giá, xem báo cáo, mời nhân viên.
+- **Staff (Nhân viên)**: Chỉ có quyền Bán hàng và xem kho cơ bản. Ẩn tab Báo cáo và các tính năng sửa giá/nhập hàng nâng cao. Có banner thông báo quyền hạn khi vào app.
+
+## 3. Các luồng chính (Key Flows)
+
+### A. Quản lý kho
+- Danh sách sản phẩm với bộ lọc (còn hàng/sắp hết/hết hàng).
+- Thẻ sản phẩm hiển thị: Tên, Tồn kho, Giá bán. Nút "Sửa" và "Nhập thêm" nhanh.
+- Form Thêm/Sửa: Tên, Đơn vị, Giá nhập, Giá bán, Số lượng.
+
+### B. Bán hàng (POS) - Ưu tiên số 1
+- Top: Search và Quick add grid.
+- Middle: Danh sách giỏ hàng linh hoạt (tăng giảm số lượng nhanh).
+- Bottom: Tổng tiền hiển thị lớn và nút Thanh toán nổi bật.
+
+### C. Báo cáo & Hao hụt
+- Dashboard: Doanh thu ngày, Tổng đơn, Top sản phẩm.
+- Biểu đồ: Xu hướng doanh thu và hao hụt.
+- Luồng hao hụt: Ghi chép hàng hỏng/hủy kèm lý do để trừ tồn kho thực tế.
+
+## 4. Nguyên tắc thiết kế (UX Rules)
+- **1 chạm**: Ưu tiên thêm sản phẩm nhanh vào đơn hàng.
+- **Tốc độ**: Ưu tiên thao tác nhanh hơn tính thẩm mỹ rườm rà.
+- **Tối giản**: Không overload thông tin trên màn hình di động.

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#526478",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#2b322c",
+                    "outline-variant": "#bccabc",
+                    "on-secondary-fixed": "#091d2e",
+                    "inverse-primary": "#61de8a",
+                    "inverse-on-surface": "#ecf3e9",
+                    "surface-container-high": "#e3eae0",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#61de8a",
+                    "primary": "#006d37",
+                    "surface-tint": "#006d37",
+                    "on-primary-container": "#00391a",
+                    "primary-fixed": "#7efba4",
+                    "on-surface-variant": "#3d4a3f",
+                    "surface-variant": "#dde5db",
+                    "surface": "#f4fbf1",
+                    "surface-bright": "#f4fbf1",
+                    "primary-container": "#27ae60",
+                    "surface-container-highest": "#dde5db",
+                    "secondary-fixed": "#d1e4fb",
+                    "background": "#f4fbf1",
+                    "tertiary-container": "#d58700",
+                    "on-tertiary-container": "#472a00",
+                    "tertiary": "#865300",
+                    "secondary": "#4e6073",
+                    "error-container": "#ffdad6",
+                    "surface-container": "#e9f0e6",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb961",
+                    "tertiary-fixed": "#ffddb9",
+                    "on-background": "#171d17",
+                    "surface-dim": "#d5dcd2",
+                    "on-primary-fixed-variant": "#005228",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#eff6ec",
+                    "on-primary-fixed": "#00210c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#171d17",
+                    "on-secondary-fixed-variant": "#36485b",
+                    "secondary-fixed-dim": "#b5c8df",
+                    "outline": "#6d7a6e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Work Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Work Sans', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-[#f4fbf1] dark:bg-stone-950 flex justify-between items-center px-6 py-4 z-40">
+<div class="text-2xl font-black text-[#006d37] tracking-tight">FreshStock</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#006d37] dark:text-[#27ae60] p-2 hover:bg-[#dde5db] dark:hover:bg-stone-800 transition-colors active:scale-95 duration-200">
+                notifications
+            </button>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="professional male portrait with a friendly smile, soft studio lighting, clean minimalist background, modern business casual style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCygWfF9AXwwmmuwy1-IUaGcaG5M46waiE5FhYYO3xTj9VnuueubSheAEAVhrxo6ORwtF5C5B4x4X3r8qdLi3KRvB5PmKfT2XFkSD4mjIT5hNrbd25Zpg9lJvvizFHGqy9fS7POHvGlkdpkzI0tH6L6HOZcyowGct3sKTt_5FVI2H5GYjdMNvSYTLy05-Q9TUrf4O2Iry5ZqWwKVbO5wxhYbBYUPDpS3-PjMY9E7jBNlpFNN1cDSI_7QCc2j_TDiIcts9-5r8ON3C4"/>
+</div>
+</div>
+</header>
+<main class="px-6 mt-4 max-w-2xl mx-auto">
+<!-- Profile Header Section -->
+<section class="mb-10">
+<div class="flex flex-col items-center text-center">
+<div class="relative mb-4">
+<div class="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-primary-container">
+<div class="w-full h-full rounded-full border-4 border-surface overflow-hidden">
+<img alt="Profile Large" class="w-full h-full object-cover" data-alt="high quality close up portrait of a male professional, bright green background tones, soft cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb30qPDV9cMxbV3X4xCQAUSV_V-EdZ2EWpTf_NOgBR1t1raGH4lbdv3QQeS-HLIcmZWWVtl-lIvsAurJFlDJs9Wsh1DFbJd6FyWab6_JfN0wrm11aHgaiQRQzYjW5yWYg5PjrAUs5aY8gmZ_GNleuiDv3qJQMjcwUZGGYbEmU90CeYj8fW02YMvtAKotEkVWcOoOAoV-52a56lJeJ79TV7pGxJhoWxfYTlPRlSW7kb2s_fjQ4Cv8n4atz2bQg0ESptFhV31sjEaAw"/>
+</div>
+</div>
+<span class="absolute bottom-1 right-1 bg-primary text-on-primary text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Owner</span>
+</div>
+<h1 class="text-3xl font-bold text-on-surface tracking-tight">Nguyễn Thành Nam</h1>
+<p class="text-on-surface-variant font-medium mt-1">Chủ kho / Quản trị hệ thống</p>
+</div>
+</section>
+<!-- Managed Warehouses (Asymmetric Bento Style) -->
+<section class="mb-10">
+<div class="flex justify-between items-end mb-4">
+<h2 class="text-xl font-bold tracking-tight">Kho hàng đang quản lý</h2>
+<button class="text-sm font-semibold text-primary hover:opacity-80">Xem tất cả</button>
+</div>
+<div class="grid grid-cols-12 gap-4">
+<div class="col-span-12 md:col-span-7 bg-surface-container-highest rounded-xl p-6 flex flex-col justify-between h-44 relative overflow-hidden">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-primary mb-2">warehouse</span>
+<h3 class="text-2xl font-bold text-on-surface">Kho Quận 1</h3>
+<p class="text-sm text-on-surface-variant">Lô A12, Cảng Khánh Hội</p>
+</div>
+<div class="flex justify-between items-center relative z-10">
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant uppercase font-bold">Trạng thái</span>
+<span class="text-primary font-bold">Đang hoạt động</span>
+</div>
+<div class="text-3xl font-black text-primary/20 absolute -right-2 -bottom-2 select-none">Q1</div>
+</div>
+</div>
+<div class="col-span-12 md:col-span-5 bg-surface-container-low rounded-xl p-6 flex flex-col justify-between h-44">
+<div>
+<span class="material-symbols-outlined text-secondary mb-2">store</span>
+<h3 class="text-xl font-bold text-on-surface">Kho Thủ Đức</h3>
+<p class="text-xs text-on-surface-variant">Khu CNC, Phường Tân Phú</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-surface" data-alt="user avatar small" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwHUShKHWrj4ymNqhiMvcvi6pLwDVW7VcQBkGrhAXoq_JkVjEKWUs7BMvqonV9JuVnAQ2CUPCiL1NqRFiNIXvOSRIBGrZY1yGLNKBXDeFH2Y1XSHFvKPRGCO3ir1oFMiBcuIu6xymNbROowWvxhhP4CrUMN8IVdxiXKlGZfuNF6wz883m712xgn5XanFMVdfrQOPNYoA6sI5cZkml47bKWwKOY5iZBavWD2Ca7rJuaA8EYZKHR29onATndAVBoj-bGxvSIjB1Crx8"/>
+<img class="w-6 h-6 rounded-full border-2 border-surface" data-alt="user avatar small" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0giAXZfsKbcgFfJQlsRkOwHBS6hMWBsctncl11VdFMpHLpCqM4MBzrqaqpJ9jNmfXzPA2EL92887G7PB3cqsd5sM7MmRvzNIeL_mUjPAguj2sCCjj7QzEGkUs2pZHjkgw4qKNa8DpfMEtZXmrXRv4Bk06hFlS14heMgwxZHXkJhxjs06uu3Y1B66kBGu3_M_DFuuwl4Rw2me01mkpocTQ5WtJKEiL83vyVx0Zvv9Ym6C0Cmtm9o9DMGhlqYeTCrkxOt8YOBNKmQs"/>
+<div class="w-6 h-6 rounded-full bg-outline-variant text-[8px] flex items-center justify-center font-bold">+5</div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-medium">7 Nhân viên</span>
+</div>
+</div>
+</div>
+</section>
+<!-- System Settings & Management (Editorial List) -->
+<section class="mb-10">
+<h2 class="text-xl font-bold tracking-tight mb-4 px-2">Cài đặt &amp; Quản lý</h2>
+<div class="space-y-3">
+<div class="group flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-surface-container-highest transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">group</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Quản lý nhân viên</p>
+<p class="text-xs text-on-surface-variant">Phân quyền, thêm bớt thành viên</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<div class="group flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-surface-container-highest transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-tertiary-container/20 flex items-center justify-center text-tertiary group-hover:bg-tertiary group-hover:text-on-tertiary transition-colors">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Cấu hình thanh toán</p>
+<p class="text-xs text-on-surface-variant">Phương thức thu tiền, hạn mức</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<div class="group flex items-center justify-between p-4 bg-surface-container-low rounded-xl hover:bg-surface-container-highest transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Cài đặt hệ thống</p>
+<p class="text-xs text-on-surface-variant">Thông báo, ngôn ngữ, giao diện</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Logout Section -->
+<section class="mb-12">
+<button class="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-error-container text-on-error-container font-bold transition-transform active:scale-[0.98]">
+<span class="material-symbols-outlined">logout</span>
+                Đăng xuất
+            </button>
+<p class="text-center text-[10px] text-on-surface-variant mt-4 opacity-50 uppercase tracking-widest font-bold">FreshStock v2.4.0 — Made with care</p>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#f4fbf1]/80 dark:bg-stone-950/80 backdrop-blur-md z-50 rounded-t-[1.5rem] border-t border-[#bccabc]/20 shadow-[0_-8px_32px_rgba(23,29,23,0.06)]">
+<!-- Trang chủ -->
+<a class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Inter'] font-medium text-[10px] mt-1">Trang chủ</span>
+</a>
+<!-- Kho hàng -->
+<a class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-['Inter'] font-medium text-[10px] mt-1">Kho hàng</span>
+</a>
+<!-- Bán hàng -->
+<a class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-['Inter'] font-medium text-[10px] mt-1">Bán hàng</span>
+</a>
+<!-- Báo cáo -->
+<a class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:opacity-100 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-['Inter'] font-medium text-[10px] mt-1">Báo cáo</span>
+</a>
+<!-- Tài khoản (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-[#dde5db] dark:bg-[#006d37]/20 text-[#006d37] dark:text-[#27ae60] rounded-2xl px-3 py-1 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-['Inter'] font-medium text-[10px] mt-1">Tài khoản</span>
+</a>
+</nav>
+</body></html>
