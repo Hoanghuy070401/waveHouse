@@ -1,0 +1,148 @@
+package com.wavehouse.presentation.stock.stockin
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StockInScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToScanner: () -> Unit,
+    viewModel: StockInViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHost = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.success) {
+        if (uiState.success) {
+            snackbarHost.showSnackbar("✅ Nhập kho thành công!")
+            viewModel.resetForm()
+        }
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            snackbarHost.showSnackbar(it)
+            viewModel.clearError()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Nhập kho", fontWeight = FontWeight.SemiBold) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHost) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Product selector
+            OutlinedTextField(
+                value = uiState.productName,
+                onValueChange = viewModel::onProductNameChange,
+                label = { Text("Sản phẩm *") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Tên sản phẩm hoặc quét barcode") },
+                isError = uiState.productError != null,
+                supportingText = uiState.productError?.let { { Text(it) } },
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = onNavigateToScanner) {
+                        Icon(Icons.Filled.QrCodeScanner, "Quét barcode")
+                    }
+                }
+            )
+
+            // Current stock display if product selected
+            if (uiState.currentStock >= 0) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Tồn kho hiện tại", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "${uiState.currentStock} ${uiState.unit}",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
+            // Quantity
+            OutlinedTextField(
+                value = uiState.quantity,
+                onValueChange = viewModel::onQuantityChange,
+                label = { Text("Số lượng nhập *") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = uiState.quantityError != null,
+                supportingText = uiState.quantityError?.let { { Text(it) } },
+                singleLine = true
+            )
+
+            // Supplier (optional)
+            OutlinedTextField(
+                value = uiState.supplierName,
+                onValueChange = viewModel::onSupplierNameChange,
+                label = { Text("Nhà cung cấp") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            // Note
+            OutlinedTextField(
+                value = uiState.note,
+                onValueChange = viewModel::onNoteChange,
+                label = { Text("Ghi chú") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Button(
+                onClick = viewModel::submit,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                enabled = !uiState.isLoading
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                } else {
+                    Text("Xác nhận nhập kho", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}

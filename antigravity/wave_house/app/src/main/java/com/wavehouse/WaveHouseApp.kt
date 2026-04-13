@@ -11,7 +11,7 @@ class WaveHouseApp : Application() {
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
-
+        // Timber logging — chỉ bật ở debug build
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }

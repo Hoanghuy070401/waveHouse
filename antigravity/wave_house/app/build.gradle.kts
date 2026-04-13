@@ -137,6 +137,12 @@ dependencies {
     // Lottie
     implementation(libs.lottie.compose)
 
+    // Timber
+    implementation(libs.timber)
+
+    // Accompanist
+    implementation(libs.accompanist.permissions)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
