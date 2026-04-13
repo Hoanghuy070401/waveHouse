@@ -28,6 +28,8 @@ import com.wavehouse.presentation.stock.lowstock.LowStockAlertScreen
 import com.wavehouse.presentation.stock.overview.StockOverviewScreen
 import com.wavehouse.presentation.stock.stockin.StockInScreen
 import com.wavehouse.presentation.stock.stockout.StockOutScreen
+import com.wavehouse.presentation.supplier.SupplierListScreen
+import com.wavehouse.presentation.supplier.addedit.AddEditSupplierScreen
 
 private const val NAV_ANIM_DURATION = 300
 
@@ -224,6 +226,24 @@ fun AppNavHost() {
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToStockIn = { navController.navigate(Routes.StockIn.route) }
                 )
+            }
+
+            // ── Supplier ────────────────────────────────────────────────────
+            composable(route = Routes.SupplierList.route) {
+                SupplierListScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToAdd = { navController.navigate(Routes.AddEditSupplier.createRoute()) },
+                    onNavigateToEdit = { navController.navigate(Routes.AddEditSupplier.createRoute(it)) }
+                )
+            }
+
+            composable(
+                route = Routes.AddEditSupplier.route,
+                arguments = listOf(navArgument("supplierId") { nullable = true }),
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(NAV_ANIM_DURATION)) }
+            ) {
+                AddEditSupplierScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             // ── Report ──────────────────────────────────────────────────────

@@ -19,12 +19,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.wavehouse.core.ui.navigation.Routes
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +36,14 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.logoutSuccess) {
+        if (uiState.logoutSuccess) {
+            navController.navigate(Routes.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -94,9 +105,7 @@ fun SettingsScreen(
                         tint = MaterialTheme.colorScheme.error
                     )
                 },
-                modifier = Modifier.then(
-                    Modifier // clickable added via viewModel
-                )
+                modifier = Modifier.clickable { viewModel.logout() }
             )
         }
     }

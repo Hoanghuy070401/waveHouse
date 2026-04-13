@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -95,6 +96,15 @@ fun StockOverviewScreen(
                     icon = Icons.Filled.Warning,
                     iconColor = StockLow,
                     onClick = { navController.navigate(Routes.LowStockAlert.route) }
+                )
+            }
+            item {
+                StockActionCard(
+                    title = "Nhà Cung Cấp",
+                    description = "Quản lý đối tác và thông tin liên hệ",
+                    icon = Icons.Filled.Store,
+                    iconColor = MaterialTheme.colorScheme.tertiary,
+                    onClick = { navController.navigate(Routes.SupplierList.route) }
                 )
             }
         }
