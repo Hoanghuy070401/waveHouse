@@ -1,0 +1,52 @@
+# =======================================
+# WaveHouse — .gitignore
+# =======================================
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+!**/src/androidTest/**/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.ap_
+
+# Sensitive files — NEVER commit these
+google-services.json
+*.keystore
+*.jks
+*.p12
+
+# Build outputs
+app/release/
+*.apk
+*.aab
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# Room schema (optional — can track for migrations)
+# app/schemas/
+
+# Test results
+test-results/
+.hprof
+
+# Logs
+*.log
+
+# .memory-bank/ is intentionally tracked (AI context per branch)

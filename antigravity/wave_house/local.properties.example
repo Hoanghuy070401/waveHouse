@@ -1,0 +1,27 @@
+# local.properties.example
+# Copy file này thành local.properties và điền giá trị của bạn
+# KHÔNG commit local.properties vào git
+
+# Android SDK path (tự động điền bởi Android Studio)
+sdk.dir=/Users/YOUR_USERNAME/Library/Android/sdk
+
+# ================================
+# Ký ứng dụng (Android Keystore)
+# ================================
+# Cần thiết để tạo SHA-1/SHA-256 cho Firebase Console
+# Tạo keystore: keytool -genkey -v -keystore wavehouse.keystore -alias wavehouse -keyalg RSA -keysize 2048 -validity 10000
+KEYSTORE_FILE=wavehouse.keystore
+KEYSTORE_PASSWORD=your_keystore_password
+KEY_ALIAS=wavehouse
+KEY_PASSWORD=your_key_password
+
+# ================================
+# Firebase SHA fingerprints
+# ================================
+# Lấy SHA-256: ./gradlew signingReport
+# Thêm vào Firebase Console > Project Settings > Your app > SHA certificate fingerprints
+
+# ================================
+# API Keys (nếu dùng thêm service)
+# ================================
+# BASE_URL=https://api.wavehouse.com/v1/

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">WaveHouse</string>
+    <string name="app_description">Quản lý kho hàng thông minh</string>
+
+    <!-- Navigation labels -->
+    <string name="nav_dashboard">Tổng quan</string>
+    <string name="nav_products">Sản phẩm</string>
+    <string name="nav_stock">Kho hàng</string>
+    <string name="nav_reports">Báo cáo</string>
+    <string name="nav_settings">Cài đặt</string>
+
+    <!-- Auth -->
+    <string name="login_title">Đăng nhập</string>
+    <string name="login_subtitle">Đăng nhập để tiếp tục</string>
+    <string name="login_email_hint">Email</string>
+    <string name="login_password_hint">Mật khẩu</string>
+    <string name="login_button">Đăng nhập</string>
+    <string name="login_forgot_password">Quên mật khẩu?</string>
+    <string name="logout">Đăng xuất</string>
+
+    <!-- Products -->
+    <string name="product_list_title">Sản phẩm</string>
+    <string name="product_search_hint">Tìm kiếm theo tên, SKU, barcode…</string>
+    <string name="product_add">Thêm sản phẩm</string>
+    <string name="product_edit">Chỉnh sửa</string>
+    <string name="product_delete">Xoá sản phẩm</string>
+    <string name="product_sku">Mã SKU</string>
+    <string name="product_barcode">Barcode / QR</string>
+    <string name="product_category">Danh mục</string>
+    <string name="product_unit">Đơn vị tính</string>
+    <string name="product_min_stock">Tồn kho tối thiểu</string>
+    <string name="product_description">Mô tả</string>
+    <string name="product_image">Ảnh sản phẩm</string>
+    <string name="product_empty">Chưa có sản phẩm nào</string>
+    <string name="product_empty_search">Không tìm thấy sản phẩm</string>
+
+    <!-- Stock Status -->
+    <string name="stock_in_stock">Còn hàng</string>
+    <string name="stock_low">Sắp hết</string>
+    <string name="stock_out">Hết hàng</string>
+    <string name="stock_quantity">Số lượng tồn</string>
+
+    <!-- Stock Operations -->
+    <string name="stock_in_title">Nhập kho</string>
+    <string name="stock_out_title">Xuất kho</string>
+    <string name="stock_history_title">Lịch sử giao dịch</string>
+    <string name="stock_low_alert_title">Cảnh báo tồn kho</string>
+    <string name="stock_in_quantity">Số lượng nhập</string>
+    <string name="stock_out_quantity">Số lượng xuất</string>
+    <string name="stock_note">Ghi chú</string>
+    <string name="stock_supplier">Nhà cung cấp</string>
+    <string name="stock_confirm">Xác nhận</string>
+    <string name="stock_insufficient">Số tồn trong kho không đủ, hiện tại tồn %d</string>
+
+    <!-- Barcode Scanner -->
+    <string name="scan_title">Quét mã barcode</string>
+    <string name="scan_instruction">Đưa barcode vào khung để quét</string>
+    <string name="scan_search_by_name">Tìm theo tên trong danh mục</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_today_in">Nhập hôm nay</string>
+    <string name="dashboard_today_out">Xuất hôm nay</string>
+    <string name="dashboard_total_products">Tổng sản phẩm</string>
+    <string name="dashboard_low_stock">Sắp hết hàng</string>
+    <string name="dashboard_recent_transactions">Giao dịch gần đây</string>
+
+    <!-- Supplier -->
+    <string name="supplier_list_title">Nhà cung cấp</string>
+    <string name="supplier_name">Tên nhà cung cấp</string>
+    <string name="supplier_phone">Số điện thoại</string>
+    <string name="supplier_email">Email</string>
+    <string name="supplier_address">Địa chỉ</string>
+    <string name="supplier_add">Thêm nhà cung cấp</string>
+    <string name="supplier_empty">Chưa có nhà cung cấp nào</string>
+
+    <!-- Reports -->
+    <string name="report_title">Báo cáo</string>
+    <string name="report_daily">Ngày</string>
+    <string name="report_weekly">Tuần</string>
+    <string name="report_monthly">Tháng</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_profile">Hồ sơ cá nhân</string>
+    <string name="settings_change_password">Đổi mật khẩu</string>
+    <string name="settings_notifications">Thông báo</string>
+    <string name="settings_dark_mode">Chế độ tối</string>
+
+    <!-- Common -->
+    <string name="save">Lưu</string>
+    <string name="cancel">Huỷ</string>
+    <string name="delete">Xoá</string>
+    <string name="confirm">Xác nhận</string>
+    <string name="retry">Thử lại</string>
+    <string name="loading">Đang tải…</string>
+    <string name="error_generic">Đã xảy ra lỗi. Vui lòng thử lại.</string>
+    <string name="error_network">Không có kết nối mạng</string>
+    <string name="success">Thành công</string>
+    <string name="no_data">Không có dữ liệu</string>
+
+    <!-- Camera Permissions -->
+    <string name="permission_camera_title">Cần quyền Camera</string>
+    <string name="permission_camera_message">Ứng dụng cần quyền camera để quét barcode sản phẩm</string>
+    <string name="permission_grant">Cấp quyền</string>
+    <string name="permission_denied">Quyền camera bị từ chối</string>
+</resources>
