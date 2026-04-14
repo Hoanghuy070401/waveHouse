@@ -2,6 +2,7 @@ package com.wavehouse.core.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -136,7 +137,8 @@ fun AppNavHost(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.Splash.route
+            startDestination = Routes.Splash.route,
+            modifier = Modifier.padding(innerPadding)
         ) {
             // ── Auth ────────────────────────────────────────────────────────
             composable(
