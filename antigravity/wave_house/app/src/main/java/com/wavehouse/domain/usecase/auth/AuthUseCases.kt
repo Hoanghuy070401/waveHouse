@@ -44,3 +44,13 @@ class SendPasswordResetEmailUseCase @Inject constructor(
         return authRepository.sendPasswordResetEmail(email.trim())
     }
 }
+
+class ConfirmPasswordResetUseCase @Inject constructor(
+    private val authRepository: AuthRepository
+) {
+    suspend operator fun invoke(oobCode: String, newPassword: String): ApiResult<Unit> {
+        if (oobCode.isBlank()) return ApiResult.Error("Mã xác thực không hợp lệ")
+        if (newPassword.length < 6) return ApiResult.Error("Mật khẩu phải có ít nhất 6 ký tự")
+        return authRepository.confirmPasswordReset(oobCode, newPassword)
+    }
+}

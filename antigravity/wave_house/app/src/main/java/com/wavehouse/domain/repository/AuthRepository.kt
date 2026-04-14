@@ -33,7 +33,7 @@ interface AuthRepository {
     /** Gửi email reset password */
     suspend fun sendPasswordResetEmail(email: String): ApiResult<Unit>
 
-    /** Xác nhận đặt lại mật khẩu bằng oobCode từ deep link */
+    /** Xác nhận đặt lại mật khẩu từ oobCode trong deep link */
     suspend fun confirmPasswordReset(oobCode: String, newPassword: String): ApiResult<Unit>
 
     /** Cập nhật profile */

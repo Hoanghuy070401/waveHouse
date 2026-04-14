@@ -13,9 +13,10 @@ sealed class Routes(val route: String) {
     data object ForgotPasswordSuccess : Routes("forgot_password_success?email={email}") {
         fun createRoute(email: String) = "forgot_password_success?email=${android.net.Uri.encode(email)}"
     }
+    /** Màn hình đặt mật khẩu mới — nhận oobCode từ deep link Firebase */
     data object NewPassword : Routes("new_password?oobCode={oobCode}") {
         fun createRoute(oobCode: String) = "new_password?oobCode=${android.net.Uri.encode(oobCode)}"
-        const val deepLinkPattern = "https://wavehouse.app/reset"
+        const val DEEP_LINK_URI = "https://wavehouse.app/reset"
     }
     data object EmailVerification : Routes("email_verification?email={email}") {
         fun createRoute(email: String) = "email_verification?email=${android.net.Uri.encode(email)}"

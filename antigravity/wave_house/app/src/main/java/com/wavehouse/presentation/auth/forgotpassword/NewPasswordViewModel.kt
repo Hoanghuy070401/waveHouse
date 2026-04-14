@@ -3,7 +3,7 @@ package com.wavehouse.presentation.auth.forgotpassword
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wavehouse.core.network.ApiResult
-import com.wavehouse.domain.repository.AuthRepository
+import com.wavehouse.domain.usecase.auth.ConfirmPasswordResetUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,14 +18,12 @@ data class NewPasswordUiState(
     val confirmPasswordError: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isSuccess: Boolean = false,
-    val showNewPassword: Boolean = false,
-    val showConfirmPassword: Boolean = false
+    val navigateToLogin: Boolean = false
 )
 
 @HiltViewModel
 class NewPasswordViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val confirmPasswordResetUseCase: ConfirmPasswordResetUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NewPasswordUiState())
@@ -36,8 +34,9 @@ class NewPasswordViewModel @Inject constructor(
             it.copy(
                 newPassword = value,
                 newPasswordError = validatePassword(value),
+                // Re-validate confirm if already filled
                 confirmPasswordError = if (it.confirmPassword.isNotBlank())
-                    validateConfirm(value, it.confirmPassword) else it.confirmPasswordError
+                    validateMatch(value, it.confirmPassword) else it.confirmPasswordError
             )
         }
     }
@@ -46,41 +45,38 @@ class NewPasswordViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 confirmPassword = value,
-                confirmPasswordError = validateConfirm(it.newPassword, value)
+                confirmPasswordError = validateMatch(it.newPassword, value)
             )
         }
     }
 
-    fun toggleShowNewPassword() =
-        _uiState.update { it.copy(showNewPassword = !it.showNewPassword) }
-
-    fun toggleShowConfirmPassword() =
-        _uiState.update { it.copy(showConfirmPassword = !it.showConfirmPassword) }
-
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
 
-    fun confirmReset(oobCode: String) {
-        val state = _uiState.value
-        val pwdError = validatePassword(state.newPassword)
-        val cfmError = validateConfirm(state.newPassword, state.confirmPassword)
+    fun clearNavigationFlag() = _uiState.update { it.copy(navigateToLogin = false) }
 
-        if (pwdError != null || cfmError != null) {
-            _uiState.update { it.copy(newPasswordError = pwdError, confirmPasswordError = cfmError) }
+    fun confirmPasswordReset(oobCode: String) {
+        val state = _uiState.value
+        val pwdErr = validatePassword(state.newPassword)
+        val matchErr = validateMatch(state.newPassword, state.confirmPassword)
+
+        if (pwdErr != null || matchErr != null) {
+            _uiState.update { it.copy(newPasswordError = pwdErr, confirmPasswordError = matchErr) }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            when (val result = authRepository.confirmPasswordReset(oobCode, state.newPassword)) {
+            when (val result = confirmPasswordResetUseCase(oobCode, state.newPassword)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                    _uiState.update { it.copy(isLoading = false, navigateToLogin = true) }
                 }
                 is ApiResult.Error -> {
-                    val msg = when {
-                        result.message?.contains("expired", ignoreCase = true) == true ||
-                        result.message?.contains("invalid", ignoreCase = true) == true ->
-                            "Link đã hết hạn. Vui lòng gửi lại email khôi phục."
-                        else -> "Không thể đặt lại mật khẩu. Vui lòng thử lại."
+                    val msg = if (result.message?.contains("expired", ignoreCase = true) == true ||
+                        result.message?.contains("invalid", ignoreCase = true) == true
+                    ) {
+                        "Link đã hết hạn. Vui lòng gửi lại email."
+                    } else {
+                        "Đặt mật khẩu thất bại. Vui lòng thử lại."
                     }
                     _uiState.update { it.copy(isLoading = false, errorMessage = msg) }
                 }
@@ -89,15 +85,15 @@ class NewPasswordViewModel @Inject constructor(
         }
     }
 
-    private fun validatePassword(pwd: String): String? = when {
-        pwd.isBlank() -> "Mật khẩu không được để trống"
-        pwd.length < 6 -> "Mật khẩu phải có ít nhất 6 ký tự"
-        else -> null
+    private fun validatePassword(password: String): String? {
+        if (password.isBlank()) return "Mật khẩu không được để trống"
+        if (password.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự"
+        return null
     }
 
-    private fun validateConfirm(pwd: String, confirm: String): String? = when {
-        confirm.isBlank() -> "Vui lòng xác nhận mật khẩu"
-        confirm != pwd -> "Mật khẩu xác nhận không khớp"
-        else -> null
+    private fun validateMatch(password: String, confirm: String): String? {
+        if (confirm.isBlank()) return "Vui lòng xác nhận mật khẩu"
+        if (password != confirm) return "Mật khẩu không khớp"
+        return null
     }
 }

@@ -32,7 +32,6 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             buildConfigField("String", "BASE_URL", "\"https://dev-api.wavehouse.com/v1/\"")
         }

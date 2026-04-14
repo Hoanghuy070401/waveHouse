@@ -75,8 +75,8 @@ class LoginViewModel @Inject constructor(
                     if (isVerified) {
                         _uiState.update { it.copy(isLoading = false, loginSuccess = true) }
                     } else {
-                        // Send verification email again and redirect
-                        authRepository.sendEmailVerification()
+                        // Redirect to verification screen — do NOT auto-resend here
+                        // (Firebase rate-limits resends; the verification screen has its own resend button)
                         _uiState.update {
                             it.copy(
                                 isLoading = false,

@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.wavehouse.domain.model.UserRole
 import com.wavehouse.presentation.auth.login.LoginScreen
 import com.wavehouse.presentation.auth.register.RegisterScreen
@@ -26,6 +27,7 @@ import com.wavehouse.presentation.auth.emailverification.EmailVerificationScreen
 import com.wavehouse.presentation.auth.forgotpassword.ForgotPasswordScreen
 import com.wavehouse.presentation.auth.forgotpassword.ForgotPasswordSuccessScreen
 import com.wavehouse.presentation.auth.forgotpassword.NewPasswordScreen
+import com.wavehouse.presentation.auth.changepassword.ChangePasswordScreen
 import com.wavehouse.presentation.dashboard.DashboardScreen
 import com.wavehouse.presentation.product.addedit.AddEditProductScreen
 import com.wavehouse.presentation.product.detail.ProductDetailScreen
@@ -87,7 +89,6 @@ private val routesWithoutBottomBar = setOf(
     Routes.EmailVerification.route,
     Routes.ForgotPassword.route,
     Routes.ForgotPasswordSuccess.route,
-    Routes.NewPassword.route,
     Routes.ProductDetail.route,
     Routes.AddProduct.route,
     Routes.EditProduct.route,
@@ -97,6 +98,7 @@ private val routesWithoutBottomBar = setOf(
     Routes.Shrinkage.route,
     Routes.StockHistory.route,
     Routes.LowStockAlert.route,
+    Routes.NewPassword.route,
     Routes.ChangePassword.route,
     Routes.PosCheckout.route,
     Routes.PosPaymentPending.route,
@@ -265,13 +267,13 @@ fun AppNavHost(
                 )
             }
 
-            // ── New Password (Deep Link from email) ────────────────────────
+            // ── New Password (via deep link) ─────────────────────────────────
             composable(
                 route = Routes.NewPassword.route,
                 arguments = listOf(navArgument("oobCode") { defaultValue = "" }),
                 deepLinks = listOf(
-                    androidx.navigation.navDeepLink {
-                        uriPattern = "${Routes.NewPassword.deepLinkPattern}?oobCode={oobCode}"
+                    navDeepLink {
+                        uriPattern = "${Routes.NewPassword.DEEP_LINK_URI}?mode=resetPassword&oobCode={oobCode}"
                     }
                 ),
                 enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
@@ -280,11 +282,23 @@ fun AppNavHost(
                 val oobCode = backStackEntry.arguments?.getString("oobCode") ?: ""
                 NewPasswordScreen(
                     oobCode = oobCode,
+                    onNavigateBack = { navController.popBackStack() },
                     onNavigateToLogin = {
                         navController.navigate(Routes.Login.route) {
                             popUpTo(0) { inclusive = true }
                         }
                     }
+                )
+            }
+
+            // ── Change Password ──────────────────────────────────────────
+            composable(
+                route = Routes.ChangePassword.route,
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
+            ) {
+                ChangePasswordScreen(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 

@@ -50,8 +50,17 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun login(email: String, password: String): ApiResult<User> =
         safeApiCall {
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
-            val uid = result.user?.uid ?: throw Exception("Đăng nhập thất bại")
-            fetchUserFromFirestore(uid) ?: throw Exception("Không tìm thấy thông tin người dùng")
+            val firebaseUser = result.user ?: throw Exception("Đăng nhập thất bại")
+            val uid = firebaseUser.uid
+            // Try Firestore first; fall back to Auth data if doc missing
+            fetchUserFromFirestore(uid) ?: User(
+                id = uid,
+                name = firebaseUser.displayName ?: email.substringBefore("@"),
+                email = firebaseUser.email ?: email,
+                role = UserRole.STAFF,
+                warehouseId = "",
+                createdAt = System.currentTimeMillis()
+            )
         }
 
     override suspend fun logout(): ApiResult<Unit> = safeApiCall {
@@ -114,7 +123,10 @@ class AuthRepositoryImpl @Inject constructor(
         firebaseAuth.sendPasswordResetEmail(email).await()
     }
 
-    override suspend fun confirmPasswordReset(oobCode: String, newPassword: String): ApiResult<Unit> = safeApiCall {
+    override suspend fun confirmPasswordReset(
+        oobCode: String,
+        newPassword: String
+    ): ApiResult<Unit> = safeApiCall {
         firebaseAuth.confirmPasswordReset(oobCode, newPassword).await()
     }
 

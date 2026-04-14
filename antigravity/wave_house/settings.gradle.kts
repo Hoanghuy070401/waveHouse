@@ -1,3 +1,10 @@
+// ── Redirect build outputs outside OneDrive to prevent sync file-locks ──────
+// OneDrive locks files in build/ causing AccessDeniedException during Gradle tasks
+val buildRoot = "C:/BuildOut/wavehouse"
+gradle.allprojects {
+    layout.buildDirectory.set(File("$buildRoot/${project.name}/build"))
+}
+
 pluginManagement {
     repositories {
         google {
