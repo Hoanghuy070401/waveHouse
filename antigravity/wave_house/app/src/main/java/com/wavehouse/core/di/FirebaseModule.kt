@@ -33,4 +33,9 @@ object FirebaseModule {
     @Provides
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirebaseDatabase(): com.google.firebase.database.FirebaseDatabase =
+        com.google.firebase.database.FirebaseDatabase.getInstance()
 }

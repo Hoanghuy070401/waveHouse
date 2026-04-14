@@ -1,6 +1,9 @@
 package com.wavehouse.data.remote.firebase
 
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.wavehouse.core.network.ApiResult
 import com.wavehouse.core.network.safeApiCall
 import com.wavehouse.domain.model.Supplier
@@ -9,57 +12,41 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SupplierRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val database: FirebaseDatabase
 ) : SupplierRepository {
+
+    private val suppliersRef = database.getReference("suppliers")
 
     override fun getSuppliers(warehouseId: String): Flow<ApiResult<List<Supplier>>> = callbackFlow {
         trySend(ApiResult.Loading)
-        val listener = firestore.collection("suppliers")
-            .whereEqualTo("warehouseId", warehouseId)
-            .orderBy("name")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(ApiResult.Error(error.message ?: "Lỗi tải nhà cung cấp"))
-                    return@addSnapshotListener
-                }
-                val suppliers = snapshot?.documents?.mapNotNull { doc ->
-                    Supplier(
-                        id = doc.id,
-                        name = doc.getString("name") ?: return@mapNotNull null,
-                        phone = doc.getString("phone"),
-                        email = doc.getString("email"),
-                        address = doc.getString("address"),
-                        warehouseId = doc.getString("warehouseId") ?: warehouseId,
-                        createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
-                    )
-                } ?: emptyList()
+        val query = suppliersRef.orderByChild("warehouseId").equalTo(warehouseId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val suppliers = snapshot.children.mapNotNull { it.toSupplier() }.sortedBy { it.name }
                 trySend(ApiResult.Success(suppliers))
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(ApiResult.Error(error.message))
+            }
+        }
+        query.addValueEventListener(listener)
+        awaitClose { query.removeEventListener(listener) }
     }
 
     override suspend fun getSupplierById(id: String): ApiResult<Supplier> = safeApiCall {
-        val doc = firestore.collection("suppliers").document(id).get().await()
-        Supplier(
-            id = doc.id,
-            name = doc.getString("name") ?: throw Exception("Không tìm thấy nhà cung cấp"),
-            phone = doc.getString("phone"),
-            email = doc.getString("email"),
-            address = doc.getString("address"),
-            warehouseId = doc.getString("warehouseId") ?: "",
-            createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
-        )
+        val snapshot = suppliersRef.child(id).get().await()
+        snapshot.toSupplier() ?: throw Exception("Không tìm thấy nhà cung cấp")
     }
 
     override suspend fun createSupplier(supplier: Supplier): ApiResult<String> = safeApiCall {
-        val docRef = firestore.collection("suppliers").document()
-        docRef.set(mapOf(
-            "id" to docRef.id,
+        val id = supplier.id.takeIf { it.isNotEmpty() } ?: suppliersRef.push().key ?: UUID.randomUUID().toString()
+        suppliersRef.child(id).setValue(mapOf(
             "name" to supplier.name,
             "phone" to supplier.phone,
             "email" to supplier.email,
@@ -67,11 +54,11 @@ class SupplierRepositoryImpl @Inject constructor(
             "warehouseId" to supplier.warehouseId,
             "createdAt" to System.currentTimeMillis()
         )).await()
-        docRef.id
+        id
     }
 
     override suspend fun updateSupplier(supplier: Supplier): ApiResult<Unit> = safeApiCall {
-        firestore.collection("suppliers").document(supplier.id).update(mapOf(
+        suppliersRef.child(supplier.id).updateChildren(mapOf(
             "name" to supplier.name,
             "phone" to supplier.phone,
             "email" to supplier.email,
@@ -80,6 +67,21 @@ class SupplierRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteSupplier(id: String): ApiResult<Unit> = safeApiCall {
-        firestore.collection("suppliers").document(id).delete().await()
+        suppliersRef.child(id).removeValue().await()
+    }
+
+    private fun DataSnapshot?.toSupplier(): Supplier? {
+        if (this == null || !exists()) return null
+        return try {
+            Supplier(
+                id = key ?: "",
+                name = child("name").getValue(String::class.java) ?: return null,
+                phone = child("phone").getValue(String::class.java),
+                email = child("email").getValue(String::class.java),
+                address = child("address").getValue(String::class.java),
+                warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
+                createdAt = child("createdAt").getValue(Long::class.java) ?: System.currentTimeMillis()
+            )
+        } catch (e: Exception) { null }
     }
 }

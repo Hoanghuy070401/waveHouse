@@ -1,7 +1,10 @@
 package com.wavehouse.data.remote.firebase
 
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.wavehouse.core.network.ApiResult
 import com.wavehouse.core.network.safeApiCall
 import com.wavehouse.domain.model.User
@@ -17,8 +20,10 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val database: FirebaseDatabase
 ) : AuthRepository {
+
+    private val usersRef = database.getReference("users")
 
     override suspend fun register(
         name: String,
@@ -31,11 +36,11 @@ class AuthRepositoryImpl @Inject constructor(
             id = uid,
             name = name,
             email = email,
-            role = com.wavehouse.domain.model.UserRole.STAFF,
+            role = UserRole.STAFF,
             warehouseId = "",
             createdAt = System.currentTimeMillis()
         )
-        firestore.collection("users").document(uid).set(
+        usersRef.child(uid).setValue(
             mapOf(
                 "name" to name,
                 "email" to email,
@@ -52,8 +57,8 @@ class AuthRepositoryImpl @Inject constructor(
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             val firebaseUser = result.user ?: throw Exception("Đăng nhập thất bại")
             val uid = firebaseUser.uid
-            // Try Firestore first; fall back to Auth data if doc missing
-            fetchUserFromFirestore(uid) ?: User(
+            
+            fetchUserFromDatabase(uid) ?: User(
                 id = uid,
                 name = firebaseUser.displayName ?: email.substringBefore("@"),
                 email = firebaseUser.email ?: email,
@@ -84,7 +89,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentUser(): User? {
         val uid = firebaseAuth.currentUser?.uid ?: return null
-        return fetchUserFromFirestore(uid)
+        return fetchUserFromDatabase(uid)
     }
 
     override fun observeAuthState(): Flow<User?> = callbackFlow {
@@ -93,14 +98,11 @@ class AuthRepositoryImpl @Inject constructor(
             if (uid == null) {
                 trySend(null)
             } else {
-                // Fetch user async
-                firestore.collection("users").document(uid).get()
-                    .addOnSuccessListener { doc ->
-                        trySend(doc.toUser())
-                    }
-                    .addOnFailureListener {
-                        trySend(null)
-                    }
+                usersRef.child(uid).get().addOnSuccessListener { snapshot ->
+                    trySend(snapshot.toUser())
+                }.addOnFailureListener {
+                    trySend(null)
+                }
             }
         }
         firebaseAuth.addAuthStateListener(listener)
@@ -112,7 +114,6 @@ class AuthRepositoryImpl @Inject constructor(
         newPassword: String
     ): ApiResult<Unit> = safeApiCall {
         val user = firebaseAuth.currentUser ?: throw Exception("Chưa đăng nhập")
-        // Re-authenticate first
         val email = user.email ?: throw Exception("Không tìm thấy email")
         val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, currentPassword)
         user.reauthenticate(credential).await()
@@ -135,33 +136,33 @@ class AuthRepositoryImpl @Inject constructor(
             val uid = firebaseAuth.currentUser?.uid ?: throw Exception("Chưa đăng nhập")
             val updates = mutableMapOf<String, Any>("name" to name)
             avatarUrl?.let { updates["avatarUrl"] = it }
-            firestore.collection("users").document(uid).update(updates).await()
+            usersRef.child(uid).updateChildren(updates).await()
         }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private suspend fun fetchUserFromFirestore(uid: String): User? {
+    private suspend fun fetchUserFromDatabase(uid: String): User? {
         return try {
-            val doc = firestore.collection("users").document(uid).get().await()
-            doc.toUser()
+            val snapshot = usersRef.child(uid).get().await()
+            snapshot.toUser()
         } catch (e: Exception) {
             null
         }
     }
 }
 
-/** Extension: Firestore DocumentSnapshot → User domain model */
-private fun com.google.firebase.firestore.DocumentSnapshot?.toUser(): User? {
+/** Extension: DataSnapshot → User domain model */
+private fun DataSnapshot?.toUser(): User? {
     if (this == null || !exists()) return null
     return try {
         User(
-            id = id,
-            name = getString("name") ?: "",
-            email = getString("email") ?: "",
-            role = UserRole.valueOf(getString("role") ?: "STAFF"),
-            warehouseId = getString("warehouseId") ?: "",
-            avatarUrl = getString("avatarUrl"),
-            createdAt = getLong("createdAt") ?: System.currentTimeMillis()
+            id = key ?: "",
+            name = child("name").getValue(String::class.java) ?: "",
+            email = child("email").getValue(String::class.java) ?: "",
+            role = UserRole.valueOf(child("role").getValue(String::class.java) ?: "STAFF"),
+            warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
+            avatarUrl = child("avatarUrl").getValue(String::class.java),
+            createdAt = child("createdAt").getValue(Long::class.java) ?: System.currentTimeMillis()
         )
     } catch (e: Exception) {
         null

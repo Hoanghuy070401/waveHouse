@@ -1,6 +1,9 @@
 package com.wavehouse.data.remote.firebase
 
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.wavehouse.core.network.ApiResult
 import com.wavehouse.core.network.safeApiCall
 import com.wavehouse.domain.model.*
@@ -8,21 +11,23 @@ import com.wavehouse.domain.repository.OrderRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 class OrderRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val database: FirebaseDatabase
 ) : OrderRepository {
 
-    private val ordersCollection get() = firestore.collection("orders")
+    private val ordersRef = database.getReference("orders")
 
     override suspend fun createOrder(order: Order): ApiResult<String> = safeApiCall {
-        val batch = firestore.batch()
-
-        // 1. Create order doc
-        val orderRef = ordersCollection.document()
-        val orderData = hashMapOf(
+        val orderId = ordersRef.push().key ?: UUID.randomUUID().toString()
+        val updates = mutableMapOf<String, Any?>()
+        
+        val orderData = mapOf(
+            "id" to orderId,
             "warehouseId" to order.warehouseId,
             "totalAmount" to order.totalAmount,
             "paymentMethod" to order.paymentMethod.name,
@@ -32,7 +37,7 @@ class OrderRepositoryImpl @Inject constructor(
             "createdAt" to order.createdAt,
             "paidAt" to order.paidAt,
             "items" to order.items.map {
-                hashMapOf(
+                mapOf(
                     "productId" to it.productId,
                     "productName" to it.productName,
                     "productSku" to it.productSku,
@@ -41,51 +46,49 @@ class OrderRepositoryImpl @Inject constructor(
                 )
             }
         )
-        batch.set(orderRef, orderData)
+        updates["orders/$orderId"] = orderData
 
-        // 2. Deduct stock for each item
+        // Deduct stock for each item
         for (item in order.items) {
-            val productRef = firestore.collection("products").document(item.productId)
-            // Using FieldValue.increment for atomic decrement
-            batch.update(productRef, "currentStock", com.google.firebase.firestore.FieldValue.increment(-item.quantity.toLong()))
+            val productRef = database.getReference("products/${item.productId}")
+            val currentStockSnap = productRef.child("currentStock").get().await()
+            val currentStock = currentStockSnap.getValue(Long::class.java)?.toInt() ?: 0
+            updates["products/${item.productId}/currentStock"] = currentStock - item.quantity
         }
 
-        batch.commit().addOnFailureListener { throw it }
-        Timber.d("Order created: ${orderRef.id}")
-        orderRef.id
+        database.reference.updateChildren(updates).await()
+        Timber.d("Order created: $orderId")
+        orderId
     }
 
     override suspend fun confirmPayment(orderId: String): ApiResult<Unit> = safeApiCall {
-        ordersCollection.document(orderId).update(
+        ordersRef.child(orderId).updateChildren(
             mapOf(
                 "status" to OrderStatus.PAID.name,
                 "paidAt" to System.currentTimeMillis()
             )
-        ).addOnFailureListener { throw it }
+        ).await()
     }
 
     override suspend fun cancelOrder(orderId: String): ApiResult<Unit> = safeApiCall {
-        ordersCollection.document(orderId).update("status", OrderStatus.CANCELLED.name)
-            .addOnFailureListener { throw it }
+        ordersRef.child(orderId).child("status").setValue(OrderStatus.CANCELLED.name).await()
     }
 
     override fun getOrders(warehouseId: String, limit: Int): Flow<ApiResult<List<Order>>> = callbackFlow {
         trySend(ApiResult.Loading)
-        val listener = ordersCollection
-            .whereEqualTo("warehouseId", warehouseId)
-            .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
-            .limit(limit.toLong())
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(ApiResult.Error(error.message ?: "Lỗi tải đơn hàng"))
-                    return@addSnapshotListener
-                }
-                val orders = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toOrder()
-                } ?: emptyList()
+        val query = ordersRef.orderByChild("warehouseId").equalTo(warehouseId).limitToLast(limit)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val orders = snapshot.children.mapNotNull { it.toOrder() }
+                    .sortedByDescending { it.createdAt }
                 trySend(ApiResult.Success(orders))
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(ApiResult.Error(error.message))
+            }
+        }
+        query.addValueEventListener(listener)
+        awaitClose { query.removeEventListener(listener) }
     }
 
     override fun getTodayOrders(warehouseId: String): Flow<ApiResult<List<Order>>> {
@@ -98,25 +101,29 @@ class OrderRepositoryImpl @Inject constructor(
 
         return callbackFlow {
             trySend(ApiResult.Loading)
-            val listener = ordersCollection
-                .whereEqualTo("warehouseId", warehouseId)
-                .whereGreaterThanOrEqualTo("createdAt", startOfDay)
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        trySend(ApiResult.Error(error.message ?: "Lỗi tải đơn hàng"))
-                        return@addSnapshotListener
-                    }
-                    val orders = snapshot?.documents?.mapNotNull { it.toOrder() } ?: emptyList()
+            val query = ordersRef.orderByChild("warehouseId").equalTo(warehouseId)
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val orders = snapshot.children.mapNotNull { it.toOrder() }
+                        .filter { it.createdAt >= startOfDay }
+                        .sortedByDescending { it.createdAt }
                     trySend(ApiResult.Success(orders))
                 }
-            awaitClose { listener.remove() }
+
+                override fun onCancelled(error: DatabaseError) {
+                    trySend(ApiResult.Error(error.message))
+                }
+            }
+            query.addValueEventListener(listener)
+            awaitClose { query.removeEventListener(listener) }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun com.google.firebase.firestore.DocumentSnapshot.toOrder(): Order? {
+    private fun DataSnapshot.toOrder(): Order? {
         return try {
-            val items = (get("items") as? List<Map<String, Any>>)?.map {
+            val itemsRaw = child("items").value as? List<Map<String, Any>>
+            val items = itemsRaw?.map {
                 OrderItem(
                     productId = it["productId"] as? String ?: "",
                     productName = it["productName"] as? String ?: "",
@@ -127,19 +134,19 @@ class OrderRepositoryImpl @Inject constructor(
             } ?: emptyList()
 
             Order(
-                id = id,
-                warehouseId = getString("warehouseId") ?: "",
+                id = key ?: "",
+                warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
                 items = items,
-                totalAmount = getDouble("totalAmount") ?: 0.0,
-                paymentMethod = PaymentMethod.valueOf(getString("paymentMethod") ?: "CASH"),
-                status = OrderStatus.valueOf(getString("status") ?: "PENDING"),
-                createdBy = getString("createdBy") ?: "",
-                createdByName = getString("createdByName") ?: "",
-                createdAt = getLong("createdAt") ?: 0L,
-                paidAt = getLong("paidAt")
+                totalAmount = child("totalAmount").getValue(Double::class.java) ?: 0.0,
+                paymentMethod = PaymentMethod.valueOf(child("paymentMethod").getValue(String::class.java) ?: "CASH"),
+                status = OrderStatus.valueOf(child("status").getValue(String::class.java) ?: "PENDING"),
+                createdBy = child("createdBy").getValue(String::class.java) ?: "",
+                createdByName = child("createdByName").getValue(String::class.java) ?: "",
+                createdAt = child("createdAt").getValue(Long::class.java) ?: 0L,
+                paidAt = child("paidAt").getValue(Long::class.java)
             )
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse order: $id")
+            Timber.e(e, "Failed to parse order: $key")
             null
         }
     }

@@ -1,64 +1,73 @@
 package com.wavehouse.data.remote.firebase
 
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
 import com.wavehouse.core.network.ApiResult
 import com.wavehouse.core.network.safeApiCall
 import com.wavehouse.domain.model.Category
 import com.wavehouse.domain.model.Product
-import com.wavehouse.domain.model.StockStatus
 import com.wavehouse.domain.model.UnitOfMeasure
 import com.wavehouse.domain.repository.ProductRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ProductRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val database: FirebaseDatabase,
+    private val storage: FirebaseStorage
 ) : ProductRepository {
+
+    private val productsRef = database.getReference("products")
+    private val categoriesRef = database.getReference("categories")
 
     override fun getProducts(warehouseId: String): Flow<ApiResult<List<Product>>> =
         callbackFlow {
             trySend(ApiResult.Loading)
-            val listener = firestore.collection("products")
-                .whereEqualTo("warehouseId", warehouseId)
-                .orderBy("name")
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        trySend(ApiResult.Error(error.message ?: "Lỗi tải sản phẩm"))
-                        return@addSnapshotListener
-                    }
-                    val products = snapshot?.documents?.mapNotNull { it.toProduct() } ?: emptyList()
+            val query = productsRef.orderByChild("warehouseId").equalTo(warehouseId)
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val products = snapshot.children.mapNotNull { it.toProduct() }
+                        .sortedBy { it.name }
                     trySend(ApiResult.Success(products))
                 }
-            awaitClose { listener.remove() }
+                override fun onCancelled(error: DatabaseError) {
+                    trySend(ApiResult.Error(error.message))
+                }
+            }
+            query.addValueEventListener(listener)
+            awaitClose { query.removeEventListener(listener) }
         }
 
     override fun searchProducts(warehouseId: String, query: String): Flow<ApiResult<List<Product>>> =
         callbackFlow {
             trySend(ApiResult.Loading)
-            // Firestore doesn't support full-text search — client-side filter
-            val listener = firestore.collection("products")
-                .whereEqualTo("warehouseId", warehouseId)
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        trySend(ApiResult.Error(error.message ?: "Lỗi tìm kiếm"))
-                        return@addSnapshotListener
-                    }
+            val dbQuery = productsRef.orderByChild("warehouseId").equalTo(warehouseId)
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
                     val q = query.lowercase()
-                    val products = snapshot?.documents
-                        ?.mapNotNull { it.toProduct() }
-                        ?.filter {
+                    val products = snapshot.children
+                        .mapNotNull { it.toProduct() }
+                        .filter {
                             it.name.lowercase().contains(q)
                                     || it.sku.lowercase().contains(q)
                                     || it.barcode?.contains(q) == true
-                        } ?: emptyList()
+                        }
                     trySend(ApiResult.Success(products))
                 }
-            awaitClose { listener.remove() }
+                override fun onCancelled(error: DatabaseError) {
+                    trySend(ApiResult.Error(error.message))
+                }
+            }
+            dbQuery.addValueEventListener(listener)
+            awaitClose { dbQuery.removeEventListener(listener) }
         }
 
     override fun getProductsByCategory(
@@ -66,80 +75,79 @@ class ProductRepositoryImpl @Inject constructor(
         categoryId: String
     ): Flow<ApiResult<List<Product>>> = callbackFlow {
         trySend(ApiResult.Loading)
-        val listener = firestore.collection("products")
-            .whereEqualTo("warehouseId", warehouseId)
-            .whereEqualTo("categoryId", categoryId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(ApiResult.Error(error.message ?: "Lỗi"))
-                    return@addSnapshotListener
-                }
-                trySend(ApiResult.Success(snapshot?.documents?.mapNotNull { it.toProduct() } ?: emptyList()))
+        val query = productsRef.orderByChild("warehouseId").equalTo(warehouseId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val products = snapshot.children.mapNotNull { it.toProduct() }
+                    .filter { it.categoryId == categoryId }
+                trySend(ApiResult.Success(products))
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(ApiResult.Error(error.message))
+            }
+        }
+        query.addValueEventListener(listener)
+        awaitClose { query.removeEventListener(listener) }
     }
 
     override suspend fun getProductById(id: String): ApiResult<Product> = safeApiCall {
-        val doc = firestore.collection("products").document(id).get().await()
-        doc.toProduct() ?: throw Exception("Không tìm thấy sản phẩm")
+        val snapshot = productsRef.child(id).get().await()
+        snapshot.toProduct() ?: throw Exception("Không tìm thấy sản phẩm")
     }
 
     override suspend fun getProductByBarcode(barcode: String): ApiResult<Product> = safeApiCall {
-        val snapshot = firestore.collection("products")
-            .whereEqualTo("barcode", barcode)
-            .limit(1)
-            .get().await()
-        snapshot.documents.firstOrNull()?.toProduct()
+        val snapshot = productsRef.orderByChild("barcode").equalTo(barcode).limitToFirst(1).get().await()
+        snapshot.children.firstOrNull()?.toProduct()
             ?: throw Exception("Không tìm thấy sản phẩm với barcode: $barcode")
     }
 
     override suspend fun createProduct(product: Product): ApiResult<String> = safeApiCall {
-        val docRef = firestore.collection("products").document()
-        val data = product.toMap().toMutableMap()
-        data["id"] = docRef.id
-        docRef.set(data).await()
-        docRef.id
+        // Đảm bảo có ID
+        val id = product.id.takeIf { it.isNotEmpty() } ?: productsRef.push().key ?: UUID.randomUUID().toString()
+        val p = product.copy(id = id)
+        
+        productsRef.child(id).setValue(p.toMap()).await()
+        id
     }
 
     override suspend fun updateProduct(product: Product): ApiResult<Unit> = safeApiCall {
-        firestore.collection("products").document(product.id)
-            .update(product.toMap().plus("updatedAt" to System.currentTimeMillis()))
-            .await()
+        productsRef.child(product.id).updateChildren(
+            product.toMap().plus("updatedAt" to System.currentTimeMillis())
+        ).await()
     }
 
     override suspend fun deleteProduct(id: String): ApiResult<Unit> = safeApiCall {
-        firestore.collection("products").document(id).delete().await()
+        productsRef.child(id).removeValue().await()
     }
 
     override suspend fun uploadProductImage(
         productId: String,
         imageBytes: ByteArray
-    ): ApiResult<String> {
-        // TODO: Implement Firebase Storage upload
-        return ApiResult.Error("Not implemented yet")
+    ): ApiResult<String> = safeApiCall {
+        val ref = storage.reference.child("product_images/${productId}_${System.currentTimeMillis()}.jpg")
+        ref.putBytes(imageBytes).await()
+        ref.downloadUrl.await().toString()
     }
 
     override fun getCategories(): Flow<ApiResult<List<Category>>> = callbackFlow {
         trySend(ApiResult.Loading)
-        val listener = firestore.collection("categories")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(ApiResult.Error(error.message ?: "Lỗi tải danh mục"))
-                    return@addSnapshotListener
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val categories = snapshot.children.mapNotNull { doc ->
+                    val name = doc.child("name").getValue(String::class.java) ?: return@mapNotNull null
+                    Category(id = doc.key ?: "", name = name)
                 }
-                val categories = snapshot?.documents?.mapNotNull { doc ->
-                    Category(
-                        id = doc.id,
-                        name = doc.getString("name") ?: return@mapNotNull null
-                    )
-                } ?: emptyList()
                 trySend(ApiResult.Success(categories))
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(ApiResult.Error(error.message))
+            }
+        }
+        categoriesRef.addValueEventListener(listener)
+        awaitClose { categoriesRef.removeEventListener(listener) }
     }
 
     override fun getUnitsOfMeasure(): Flow<ApiResult<List<UnitOfMeasure>>> = callbackFlow {
-        // Return default units if collection not populated
         trySend(ApiResult.Success(defaultUnits))
         awaitClose {}
     }
@@ -156,26 +164,27 @@ private val defaultUnits = listOf(
     UnitOfMeasure("8", "Bộ", "bộ"),
 )
 
-private fun com.google.firebase.firestore.DocumentSnapshot.toProduct(): Product? {
+private fun DataSnapshot.toProduct(): Product? {
     return try {
+        // Because fields might be null or stored differently, we read them dynamically
         Product(
-            id = id,
-            name = getString("name") ?: return null,
-            sku = getString("sku") ?: "",
-            barcode = getString("barcode"),
-            categoryId = getString("categoryId"),
-            categoryName = getString("categoryName"),
-            unitId = getString("unitId"),
-            unitName = getString("unitName"),
-            description = getString("description"),
-            imageUrl = getString("imageUrl"),
-            costPrice = getDouble("costPrice") ?: 0.0,
-            salePrice = getDouble("salePrice") ?: 0.0,
-            minStock = getLong("minStock")?.toInt() ?: 0,
-            warehouseId = getString("warehouseId") ?: "",
-            currentStock = getLong("currentStock")?.toInt() ?: 0,
-            createdAt = getLong("createdAt") ?: System.currentTimeMillis(),
-            updatedAt = getLong("updatedAt") ?: System.currentTimeMillis()
+            id = key ?: return null,
+            name = child("name").getValue(String::class.java) ?: return null,
+            sku = child("sku").getValue(String::class.java) ?: "",
+            barcode = child("barcode").getValue(String::class.java),
+            categoryId = child("categoryId").getValue(String::class.java),
+            categoryName = child("categoryName").getValue(String::class.java),
+            unitId = child("unitId").getValue(String::class.java),
+            unitName = child("unitName").getValue(String::class.java),
+            description = child("description").getValue(String::class.java),
+            imageUrl = child("imageUrl").getValue(String::class.java),
+            costPrice = child("costPrice").getValue(Double::class.java) ?: 0.0,
+            salePrice = child("salePrice").getValue(Double::class.java) ?: 0.0,
+            minStock = child("minStock").getValue(Long::class.java)?.toInt() ?: 0,
+            warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
+            currentStock = child("currentStock").getValue(Long::class.java)?.toInt() ?: 0,
+            createdAt = child("createdAt").getValue(Long::class.java) ?: System.currentTimeMillis(),
+            updatedAt = child("updatedAt").getValue(Long::class.java) ?: System.currentTimeMillis()
         )
     } catch (e: Exception) { null }
 }
