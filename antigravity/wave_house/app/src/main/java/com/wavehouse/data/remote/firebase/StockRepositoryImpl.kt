@@ -4,12 +4,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.wavehouse.core.network.ApiResult
 import com.wavehouse.core.network.safeApiCall
-import com.wavehouse.domain.model.Product
-import com.wavehouse.domain.model.StockEntry
-import com.wavehouse.domain.model.StockEntryType
-import com.wavehouse.domain.model.StockItem
-import com.wavehouse.domain.model.StockStatus
-import com.wavehouse.domain.model.DashboardStats
+import com.wavehouse.domain.model.*
 import com.wavehouse.domain.repository.StockRepository
 import com.wavehouse.core.utils.todayStartMillis
 import com.wavehouse.core.utils.last7DaysLabels
@@ -186,6 +181,39 @@ class StockRepositoryImpl @Inject constructor(
         )).await()
     }
 
+    override suspend fun createShrinkage(
+        productId: String,
+        warehouseId: String,
+        quantity: Int,
+        reason: ShrinkageReason,
+        note: String?
+    ): ApiResult<Unit> = safeApiCall {
+        firestore.runTransaction { transaction ->
+            val stockRef = firestore.collection("stock")
+                .document(warehouseId).collection("items").document(productId)
+            val currentDoc = transaction.get(stockRef)
+            val currentQty = currentDoc.getLong("quantity")?.toInt() ?: 0
+            if (quantity > currentQty) throw Exception("Tồn kho không đủ")
+
+            transaction.update(stockRef, mapOf(
+                "quantity" to (currentQty - quantity),
+                "lastUpdated" to System.currentTimeMillis()
+            ))
+
+            val entryRef = firestore.collection("stock_entries").document()
+            transaction.set(entryRef, mapOf(
+                "id" to entryRef.id,
+                "type" to "SHRINKAGE",
+                "productId" to productId,
+                "warehouseId" to warehouseId,
+                "quantity" to quantity,
+                "shrinkageReason" to reason.name,
+                "note" to note,
+                "createdAt" to System.currentTimeMillis()
+            ))
+        }.await()
+    }
+
     override fun getTodayStats(warehouseId: String): Flow<ApiResult<DashboardStats>> =
         callbackFlow {
             trySend(ApiResult.Loading)
@@ -208,36 +236,52 @@ class StockRepositoryImpl @Inject constructor(
                 }
             awaitClose { listener.remove() }
         }
+
+    override fun getReportStats(warehouseId: String, days: Int): Flow<ApiResult<ReportStats>> =
+        callbackFlow {
+            trySend(ApiResult.Loading)
+            // Simplified: return empty stats, full aggregation via Cloud Functions later
+            trySend(ApiResult.Success(ReportStats()))
+            awaitClose { }
+        }
 }
 
-private fun com.google.firebase.firestore.DocumentSnapshot.toStockItem(): StockItem? = try {
-    StockItem(
-        productId = getString("productId") ?: return null,
-        productName = getString("productName") ?: "",
-        productSku = getString("productSku") ?: "",
-        productImageUrl = getString("productImageUrl"),
-        warehouseId = getString("warehouseId") ?: "",
-        quantity = getLong("quantity")?.toInt() ?: 0,
-        minStock = getLong("minStock")?.toInt() ?: 0,
-        lastUpdated = getLong("lastUpdated") ?: 0L,
-        updatedBy = getString("updatedBy") ?: ""
-    )
-} catch (e: Exception) { null }
+private fun com.google.firebase.firestore.DocumentSnapshot.toStockItem(): StockItem? {
+    return try {
+        StockItem(
+            productId = getString("productId") ?: return null,
+            productName = getString("productName") ?: "",
+            productSku = getString("productSku") ?: "",
+            productImageUrl = getString("productImageUrl"),
+            warehouseId = getString("warehouseId") ?: "",
+            quantity = getLong("quantity")?.toInt() ?: 0,
+            minStock = getLong("minStock")?.toInt() ?: 0,
+            salePrice = getDouble("salePrice") ?: 0.0,
+            lastUpdated = getLong("lastUpdated") ?: 0L,
+            updatedBy = getString("updatedBy") ?: ""
+        )
+    } catch (e: Exception) { null }
+}
 
-private fun com.google.firebase.firestore.DocumentSnapshot.toStockEntry(): StockEntry? = try {
-    StockEntry(
-        id = id,
-        type = StockEntryType.valueOf(getString("type") ?: "IN"),
-        productId = getString("productId") ?: return null,
-        productName = getString("productName") ?: "",
-        productSku = getString("productSku") ?: "",
-        warehouseId = getString("warehouseId") ?: "",
-        quantity = getLong("quantity")?.toInt() ?: 0,
-        note = getString("note"),
-        supplierId = getString("supplierId"),
-        supplierName = getString("supplierName"),
-        createdBy = getString("createdBy") ?: "",
-        createdByName = getString("createdByName") ?: "",
-        createdAt = getLong("createdAt") ?: 0L
-    )
-} catch (e: Exception) { null }
+private fun com.google.firebase.firestore.DocumentSnapshot.toStockEntry(): StockEntry? {
+    return try {
+        StockEntry(
+            id = id,
+            type = StockEntryType.valueOf(getString("type") ?: "IN"),
+            productId = getString("productId") ?: return null,
+            productName = getString("productName") ?: "",
+            productSku = getString("productSku") ?: "",
+            warehouseId = getString("warehouseId") ?: "",
+            quantity = getLong("quantity")?.toInt() ?: 0,
+            note = getString("note"),
+            supplierId = getString("supplierId"),
+            supplierName = getString("supplierName"),
+            shrinkageReason = getString("shrinkageReason")?.let {
+                try { ShrinkageReason.valueOf(it) } catch (_: Exception) { null }
+            },
+            createdBy = getString("createdBy") ?: "",
+            createdByName = getString("createdByName") ?: "",
+            createdAt = getLong("createdAt") ?: 0L
+        )
+    } catch (e: Exception) { null }
+}

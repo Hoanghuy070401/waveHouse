@@ -17,9 +17,10 @@ class SupplierRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : SupplierRepository {
 
-    override fun getSuppliers(): Flow<ApiResult<List<Supplier>>> = callbackFlow {
+    override fun getSuppliers(warehouseId: String): Flow<ApiResult<List<Supplier>>> = callbackFlow {
         trySend(ApiResult.Loading)
         val listener = firestore.collection("suppliers")
+            .whereEqualTo("warehouseId", warehouseId)
             .orderBy("name")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -33,6 +34,7 @@ class SupplierRepositoryImpl @Inject constructor(
                         phone = doc.getString("phone"),
                         email = doc.getString("email"),
                         address = doc.getString("address"),
+                        warehouseId = doc.getString("warehouseId") ?: warehouseId,
                         createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
                     )
                 } ?: emptyList()
@@ -49,6 +51,7 @@ class SupplierRepositoryImpl @Inject constructor(
             phone = doc.getString("phone"),
             email = doc.getString("email"),
             address = doc.getString("address"),
+            warehouseId = doc.getString("warehouseId") ?: "",
             createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
         )
     }
@@ -61,6 +64,7 @@ class SupplierRepositoryImpl @Inject constructor(
             "phone" to supplier.phone,
             "email" to supplier.email,
             "address" to supplier.address,
+            "warehouseId" to supplier.warehouseId,
             "createdAt" to System.currentTimeMillis()
         )).await()
         docRef.id

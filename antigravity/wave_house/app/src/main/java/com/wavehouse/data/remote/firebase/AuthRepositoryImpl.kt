@@ -20,6 +20,33 @@ class AuthRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : AuthRepository {
 
+    override suspend fun register(
+        name: String,
+        email: String,
+        password: String
+    ): ApiResult<User> = safeApiCall {
+        val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+        val uid = result.user?.uid ?: throw Exception("Đăng ký thất bại")
+        val user = User(
+            id = uid,
+            name = name,
+            email = email,
+            role = com.wavehouse.domain.model.UserRole.STAFF,
+            warehouseId = "",
+            createdAt = System.currentTimeMillis()
+        )
+        firestore.collection("users").document(uid).set(
+            mapOf(
+                "name" to name,
+                "email" to email,
+                "role" to "STAFF",
+                "warehouseId" to "",
+                "createdAt" to user.createdAt
+            )
+        ).await()
+        user
+    }
+
     override suspend fun login(email: String, password: String): ApiResult<User> =
         safeApiCall {
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
@@ -31,13 +58,28 @@ class AuthRepositoryImpl @Inject constructor(
         firebaseAuth.signOut()
     }
 
+    override suspend fun sendEmailVerification(): ApiResult<Unit> = safeApiCall {
+        val user = firebaseAuth.currentUser
+            ?: throw Exception("Chưa đăng nhập")
+        user.sendEmailVerification().await()
+    }
+
+    override suspend fun reloadAndCheckVerified(): Boolean {
+        return try {
+            firebaseAuth.currentUser?.reload()?.await()
+            firebaseAuth.currentUser?.isEmailVerified == true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     override suspend fun getCurrentUser(): User? {
         val uid = firebaseAuth.currentUser?.uid ?: return null
         return fetchUserFromFirestore(uid)
     }
 
     override fun observeAuthState(): Flow<User?> = callbackFlow {
-        val listener = firebaseAuth.addAuthStateListener { auth ->
+        val listener = FirebaseAuth.AuthStateListener { auth ->
             val uid = auth.currentUser?.uid
             if (uid == null) {
                 trySend(null)
@@ -52,6 +94,7 @@ class AuthRepositoryImpl @Inject constructor(
                     }
             }
         }
+        firebaseAuth.addAuthStateListener(listener)
         awaitClose { firebaseAuth.removeAuthStateListener(listener) }
     }
 
@@ -82,8 +125,12 @@ class AuthRepositoryImpl @Inject constructor(
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private suspend fun fetchUserFromFirestore(uid: String): User? {
-        val doc = firestore.collection("users").document(uid).get().await()
-        return doc.toUser()
+        return try {
+            val doc = firestore.collection("users").document(uid).get().await()
+            doc.toUser()
+        } catch (e: Exception) {
+            null
+        }
     }
 }
 

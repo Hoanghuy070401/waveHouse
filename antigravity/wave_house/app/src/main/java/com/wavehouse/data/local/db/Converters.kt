@@ -10,10 +10,4 @@ class Converters {
     @TypeConverter
     fun toStringList(value: String): List<String> =
         if (value.isBlank()) emptyList() else value.split(",")
-
-    @TypeConverter
-    fun fromLong(value: Long?): Long? = value
-
-    @TypeConverter
-    fun toLong(value: Long?): Long? = value
 }

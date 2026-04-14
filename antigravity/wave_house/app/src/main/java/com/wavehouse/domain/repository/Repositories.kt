@@ -1,9 +1,7 @@
 package com.wavehouse.domain.repository
 
 import com.wavehouse.core.network.ApiResult
-import com.wavehouse.domain.model.Product
-import com.wavehouse.domain.model.Category
-import com.wavehouse.domain.model.UnitOfMeasure
+import com.wavehouse.domain.model.*
 import kotlinx.coroutines.flow.Flow
 
 /** Repository interface cho Product */
@@ -35,13 +33,13 @@ interface ProductRepository {
 /** Repository interface cho Stock */
 interface StockRepository {
 
-    fun getStockItems(warehouseId: String): Flow<ApiResult<List<com.wavehouse.domain.model.StockItem>>>
+    fun getStockItems(warehouseId: String): Flow<ApiResult<List<StockItem>>>
 
-    fun getLowStockItems(warehouseId: String): Flow<ApiResult<List<com.wavehouse.domain.model.StockItem>>>
+    fun getLowStockItems(warehouseId: String): Flow<ApiResult<List<StockItem>>>
 
-    fun getStockHistory(warehouseId: String): Flow<ApiResult<List<com.wavehouse.domain.model.StockEntry>>>
+    fun getStockHistory(warehouseId: String): Flow<ApiResult<List<StockEntry>>>
 
-    fun getProductStockHistory(productId: String, warehouseId: String): Flow<ApiResult<List<com.wavehouse.domain.model.StockEntry>>>
+    fun getProductStockHistory(productId: String, warehouseId: String): Flow<ApiResult<List<StockEntry>>>
 
     suspend fun createStockIn(
         productId: String,
@@ -58,6 +56,14 @@ interface StockRepository {
         note: String?
     ): ApiResult<Unit>
 
+    suspend fun createShrinkage(
+        productId: String,
+        warehouseId: String,
+        quantity: Int,
+        reason: ShrinkageReason,
+        note: String?
+    ): ApiResult<Unit>
+
     suspend fun adjustStock(
         productId: String,
         warehouseId: String,
@@ -65,19 +71,45 @@ interface StockRepository {
         note: String?
     ): ApiResult<Unit>
 
-    fun getTodayStats(warehouseId: String): Flow<ApiResult<com.wavehouse.domain.model.DashboardStats>>
+    fun getTodayStats(warehouseId: String): Flow<ApiResult<DashboardStats>>
+
+    fun getReportStats(warehouseId: String, days: Int): Flow<ApiResult<ReportStats>>
 }
 
 /** Repository interface cho Supplier */
 interface SupplierRepository {
 
-    fun getSuppliers(): Flow<ApiResult<List<com.wavehouse.domain.model.Supplier>>>
+    fun getSuppliers(warehouseId: String): Flow<ApiResult<List<Supplier>>>
 
-    suspend fun getSupplierById(id: String): ApiResult<com.wavehouse.domain.model.Supplier>
+    suspend fun getSupplierById(id: String): ApiResult<Supplier>
 
-    suspend fun createSupplier(supplier: com.wavehouse.domain.model.Supplier): ApiResult<String>
+    suspend fun createSupplier(supplier: Supplier): ApiResult<String>
 
-    suspend fun updateSupplier(supplier: com.wavehouse.domain.model.Supplier): ApiResult<Unit>
+    suspend fun updateSupplier(supplier: Supplier): ApiResult<Unit>
 
     suspend fun deleteSupplier(id: String): ApiResult<Unit>
+}
+
+/** Repository interface cho Order (POS) */
+interface OrderRepository {
+
+    suspend fun createOrder(order: Order): ApiResult<String>
+
+    suspend fun confirmPayment(orderId: String): ApiResult<Unit>
+
+    suspend fun cancelOrder(orderId: String): ApiResult<Unit>
+
+    fun getOrders(warehouseId: String, limit: Int = 50): Flow<ApiResult<List<Order>>>
+
+    fun getTodayOrders(warehouseId: String): Flow<ApiResult<List<Order>>>
+}
+
+/** Repository interface cho Warehouse */
+interface WarehouseRepository {
+
+    fun getWarehouses(userId: String): Flow<ApiResult<List<Warehouse>>>
+
+    suspend fun getWarehouseById(id: String): ApiResult<Warehouse>
+
+    suspend fun switchWarehouse(userId: String, warehouseId: String): ApiResult<Unit>
 }

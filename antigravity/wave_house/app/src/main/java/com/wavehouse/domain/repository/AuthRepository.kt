@@ -6,11 +6,20 @@ import kotlinx.coroutines.flow.Flow
 
 /** Repository interface cho Authentication */
 interface AuthRepository {
+    /** Đăng ký tài khoản mới */
+    suspend fun register(name: String, email: String, password: String): ApiResult<User>
+
     /** Đăng nhập bằng email/password → trả về User */
     suspend fun login(email: String, password: String): ApiResult<User>
 
     /** Đăng xuất */
     suspend fun logout(): ApiResult<Unit>
+
+    /** Gửi email xác minh đến user hiện tại */
+    suspend fun sendEmailVerification(): ApiResult<Unit>
+
+    /** Reload Firebase Auth user và trả về trạng thái isEmailVerified */
+    suspend fun reloadAndCheckVerified(): Boolean
 
     /** Lấy user hiện tại (null nếu chưa đăng nhập) */
     suspend fun getCurrentUser(): User?

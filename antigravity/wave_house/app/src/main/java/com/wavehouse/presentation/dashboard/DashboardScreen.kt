@@ -104,6 +104,29 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        val vndFormat = java.text.NumberFormat.getNumberInstance(java.util.Locale("vi", "VN"))
+                        KpiCard(
+                            title = "Doanh thu",
+                            value = "${vndFormat.format(uiState.stats.todayRevenue)}đ",
+                            subtitle = "hôm nay",
+                            icon = Icons.Filled.ArrowUpward,
+                            iconColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        KpiCard(
+                            title = "Đơn hàng",
+                            value = uiState.stats.todayOrders.toString(),
+                            subtitle = "hôm nay",
+                            icon = Icons.Filled.Inventory,
+                            iconColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         KpiCard(
                             title = "Nhập kho",
                             value = uiState.stats.todayStockIn.toString(),
@@ -131,7 +154,7 @@ fun DashboardScreen(
                             value = uiState.stats.totalProducts.toString(),
                             subtitle = "loại sản phẩm",
                             icon = Icons.Filled.Inventory,
-                            iconColor = MaterialTheme.colorScheme.primary,
+                            iconColor = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.weight(1f)
                         )
                         KpiCard(

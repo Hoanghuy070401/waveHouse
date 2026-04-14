@@ -126,18 +126,18 @@ private fun ProductDetailContent(product: Product, modifier: Modifier = Modifier
             InfoCard {
                 InfoRow(label = "Mã SKU", value = product.sku)
                 if (!product.barcode.isNullOrBlank()) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     InfoRow(
                         label = "Barcode",
                         value = product.barcode,
                         icon = { Icon(Icons.Filled.QrCode, null, Modifier.size(16.dp)) }
                     )
                 }
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 InfoRow(label = "Đơn vị tính", value = product.unitName ?: "—")
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 InfoRow(label = "Tồn kho tối thiểu", value = "${product.minStock}")
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 InfoRow(
                     label = "Trạng thái",
                     value = when (product.stockStatus) {
@@ -146,6 +146,19 @@ private fun ProductDetailContent(product: Product, modifier: Modifier = Modifier
                         StockStatus.OUT_OF_STOCK -> "Hết hàng"
                     },
                     valueColor = stockStatusColor(product.stockStatus)
+                )
+            }
+
+            // Price card
+            Spacer(Modifier.height(16.dp))
+            InfoCard {
+                val vndFormat = java.text.NumberFormat.getNumberInstance(java.util.Locale("vi", "VN"))
+                InfoRow(label = "Giá nhập", value = "${vndFormat.format(product.costPrice)}đ")
+                Spacer(modifier = Modifier.height(12.dp))
+                InfoRow(
+                    label = "Giá bán",
+                    value = "${vndFormat.format(product.salePrice)}đ",
+                    valueColor = MaterialTheme.colorScheme.primary
                 )
             }
 

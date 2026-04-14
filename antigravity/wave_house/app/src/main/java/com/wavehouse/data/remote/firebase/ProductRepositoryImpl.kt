@@ -156,25 +156,29 @@ private val defaultUnits = listOf(
     UnitOfMeasure("8", "Bộ", "bộ"),
 )
 
-private fun com.google.firebase.firestore.DocumentSnapshot.toProduct(): Product? = try {
-    Product(
-        id = id,
-        name = getString("name") ?: return null,
-        sku = getString("sku") ?: "",
-        barcode = getString("barcode"),
-        categoryId = getString("categoryId"),
-        categoryName = getString("categoryName"),
-        unitId = getString("unitId"),
-        unitName = getString("unitName"),
-        description = getString("description"),
-        imageUrl = getString("imageUrl"),
-        minStock = getLong("minStock")?.toInt() ?: 0,
-        warehouseId = getString("warehouseId") ?: "",
-        currentStock = getLong("currentStock")?.toInt() ?: 0,
-        createdAt = getLong("createdAt") ?: System.currentTimeMillis(),
-        updatedAt = getLong("updatedAt") ?: System.currentTimeMillis()
-    )
-} catch (e: Exception) { null }
+private fun com.google.firebase.firestore.DocumentSnapshot.toProduct(): Product? {
+    return try {
+        Product(
+            id = id,
+            name = getString("name") ?: return null,
+            sku = getString("sku") ?: "",
+            barcode = getString("barcode"),
+            categoryId = getString("categoryId"),
+            categoryName = getString("categoryName"),
+            unitId = getString("unitId"),
+            unitName = getString("unitName"),
+            description = getString("description"),
+            imageUrl = getString("imageUrl"),
+            costPrice = getDouble("costPrice") ?: 0.0,
+            salePrice = getDouble("salePrice") ?: 0.0,
+            minStock = getLong("minStock")?.toInt() ?: 0,
+            warehouseId = getString("warehouseId") ?: "",
+            currentStock = getLong("currentStock")?.toInt() ?: 0,
+            createdAt = getLong("createdAt") ?: System.currentTimeMillis(),
+            updatedAt = getLong("updatedAt") ?: System.currentTimeMillis()
+        )
+    } catch (e: Exception) { null }
+}
 
 private fun Product.toMap(): Map<String, Any?> = mapOf(
     "name" to name,
@@ -186,6 +190,8 @@ private fun Product.toMap(): Map<String, Any?> = mapOf(
     "unitName" to unitName,
     "description" to description,
     "imageUrl" to imageUrl,
+    "costPrice" to costPrice,
+    "salePrice" to salePrice,
     "minStock" to minStock,
     "warehouseId" to warehouseId,
     "currentStock" to currentStock,

@@ -71,6 +71,8 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
+    // Material Components for Android (XML themes: Theme.Material3.DayNight.NoActionBar)
+    implementation(libs.material)
 
     // Compose BOM
     implementation(platform(libs.compose.bom))

@@ -2,6 +2,8 @@ package com.wavehouse.domain.usecase.stock
 
 import com.wavehouse.core.network.ApiResult
 import com.wavehouse.domain.model.DashboardStats
+import com.wavehouse.domain.model.ReportStats
+import com.wavehouse.domain.model.ShrinkageReason
 import com.wavehouse.domain.model.StockEntry
 import com.wavehouse.domain.model.StockItem
 import com.wavehouse.domain.repository.StockRepository
@@ -62,9 +64,36 @@ class CreateStockOutUseCase @Inject constructor(
     }
 }
 
+class CreateShrinkageUseCase @Inject constructor(
+    private val stockRepository: StockRepository
+) {
+    suspend operator fun invoke(
+        productId: String,
+        warehouseId: String,
+        quantity: Int,
+        currentStock: Int,
+        reason: ShrinkageReason,
+        note: String? = null
+    ): ApiResult<Unit> {
+        if (quantity <= 0) return ApiResult.Error("Số lượng hao hụt phải lớn hơn 0")
+        if (quantity > currentStock) return ApiResult.Error(
+            "Số tồn trong kho không đủ, hiện tại tồn $currentStock"
+        )
+        return stockRepository.createShrinkage(productId, warehouseId, quantity, reason, note)
+    }
+}
+
 class GetDashboardStatsUseCase @Inject constructor(
     private val stockRepository: StockRepository
 ) {
     operator fun invoke(warehouseId: String): Flow<ApiResult<DashboardStats>> =
         stockRepository.getTodayStats(warehouseId)
 }
+
+class GetReportStatsUseCase @Inject constructor(
+    private val stockRepository: StockRepository
+) {
+    operator fun invoke(warehouseId: String, days: Int = 7): Flow<ApiResult<ReportStats>> =
+        stockRepository.getReportStats(warehouseId, days)
+}
+

@@ -23,6 +23,8 @@ data class AddEditProductUiState(
     val sku: String = "",
     val barcode: String = "",
     val description: String = "",
+    val costPrice: String = "",
+    val salePrice: String = "",
     val minStock: String = "0",
     val selectedCategoryId: String = "",
     val selectedCategoryName: String = "",
@@ -81,6 +83,8 @@ class AddEditProductViewModel @Inject constructor(
                             sku = p.sku,
                             barcode = p.barcode ?: "",
                             description = p.description ?: "",
+                            costPrice = if (p.costPrice > 0) p.costPrice.toLong().toString() else "",
+                            salePrice = if (p.salePrice > 0) p.salePrice.toLong().toString() else "",
                             minStock = p.minStock.toString(),
                             selectedCategoryId = p.categoryId ?: "",
                             selectedCategoryName = p.categoryName ?: "",
@@ -108,6 +112,8 @@ class AddEditProductViewModel @Inject constructor(
     }
     fun onBarcodeChange(v: String) = _uiState.update { it.copy(barcode = v) }
     fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v) }
+    fun onCostPriceChange(v: String) = _uiState.update { it.copy(costPrice = v.filter { c -> c.isDigit() }) }
+    fun onSalePriceChange(v: String) = _uiState.update { it.copy(salePrice = v.filter { c -> c.isDigit() }) }
     fun onMinStockChange(v: String) = _uiState.update { it.copy(minStock = v.filter { c -> c.isDigit() }) }
     fun onCategorySelected(id: String, name: String) = _uiState.update {
         it.copy(selectedCategoryId = id, selectedCategoryName = name)
@@ -138,6 +144,8 @@ class AddEditProductViewModel @Inject constructor(
                 unitId = state.selectedUnitId.ifBlank { null },
                 unitName = state.selectedUnitName.ifBlank { null },
                 description = state.description.trim().ifBlank { null },
+                costPrice = state.costPrice.toDoubleOrNull() ?: 0.0,
+                salePrice = state.salePrice.toDoubleOrNull() ?: 0.0,
                 minStock = state.minStock.toIntOrNull() ?: 0,
                 warehouseId = state.warehouseId,
                 imageUrl = state.imageUrl

@@ -2,9 +2,9 @@ package com.wavehouse.presentation.auth.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wavehouse.domain.model.User
-import com.wavehouse.domain.usecase.auth.LoginUseCase
 import com.wavehouse.core.network.ApiResult
+import com.wavehouse.domain.repository.AuthRepository
+import com.wavehouse.domain.usecase.auth.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,24 +20,23 @@ data class LoginUiState(
     val isLoading: Boolean = false,
     val isPasswordVisible: Boolean = false,
     val errorMessage: String? = null,
-    val loginSuccess: Boolean = false
+    val loginSuccess: Boolean = false,
+    // Email verification flow
+    val requiresEmailVerification: Boolean = false,
+    val verificationEmail: String = ""
 )
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUseCase: LoginUseCase
+    private val loginUseCase: LoginUseCase,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
 
     fun onEmailChange(email: String) {
-        _uiState.update {
-            it.copy(
-                email = email,
-                emailError = validateEmail(email)
-            )
-        }
+        _uiState.update { it.copy(email = email, emailError = validateEmail(email)) }
     }
 
     fun onPasswordChange(password: String) {
@@ -53,14 +52,13 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
     }
 
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
+    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
+
+    fun clearVerificationFlag() =
+        _uiState.update { it.copy(requiresEmailVerification = false, verificationEmail = "") }
 
     fun login() {
         val state = _uiState.value
-
-        // Validate trước khi gửi
         val emailError = validateEmail(state.email)
         val passwordError = if (state.password.length < 6) "Mật khẩu tối thiểu 6 ký tự" else null
         if (emailError != null || passwordError != null) {
@@ -72,12 +70,24 @@ class LoginViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             when (val result = loginUseCase(state.email, state.password)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, loginSuccess = true) }
+                    // Reload user and check email verification
+                    val isVerified = authRepository.reloadAndCheckVerified()
+                    if (isVerified) {
+                        _uiState.update { it.copy(isLoading = false, loginSuccess = true) }
+                    } else {
+                        // Send verification email again and redirect
+                        authRepository.sendEmailVerification()
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                requiresEmailVerification = true,
+                                verificationEmail = state.email
+                            )
+                        }
+                    }
                 }
                 is ApiResult.Error -> {
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = result.message)
-                    }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
                 ApiResult.Loading -> {}
             }

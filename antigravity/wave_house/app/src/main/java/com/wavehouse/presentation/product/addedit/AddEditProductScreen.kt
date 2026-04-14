@@ -114,6 +114,31 @@ fun AddEditProductScreen(
                 }
             )
 
+            // Price row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = uiState.costPrice,
+                    onValueChange = viewModel::onCostPriceChange,
+                    label = { Text("Giá nhập") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    suffix = { Text("đ") }
+                )
+                OutlinedTextField(
+                    value = uiState.salePrice,
+                    onValueChange = viewModel::onSalePriceChange,
+                    label = { Text("Giá bán") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    suffix = { Text("đ") }
+                )
+            }
+
             // Min Stock
             OutlinedTextField(
                 value = uiState.minStock,

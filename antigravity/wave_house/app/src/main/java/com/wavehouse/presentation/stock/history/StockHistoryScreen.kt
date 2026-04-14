@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
@@ -95,12 +96,14 @@ fun StockHistoryScreen(
 
 @Composable
 private fun StockEntryCard(entry: StockEntry) {
-    val (iconVector, iconColor) = when (entry.type) {
+    val iconPair: Pair<ImageVector, Color> = when (entry.type) {
         StockEntryType.IN -> Icons.Filled.ArrowDownward to ChartIn
         StockEntryType.OUT -> Icons.Filled.ArrowUpward to ChartOut
         StockEntryType.ADJUST -> Icons.Filled.Tune to StockLow
         StockEntryType.TRANSFER -> Icons.Filled.SwapHoriz to MaterialTheme.colorScheme.primary
+        StockEntryType.SHRINKAGE -> Icons.Filled.DeleteForever to ChartOut
     }
+    val (iconVector, iconColor) = iconPair
     val sign = if (entry.type.isIncoming) "+" else "-"
 
     Card(

@@ -212,6 +212,15 @@ fun ProductCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+                if (product.salePrice > 0) {
+                    val vndFormat = java.text.NumberFormat.getNumberInstance(java.util.Locale("vi", "VN"))
+                    Text(
+                        text = "${vndFormat.format(product.salePrice)}đ",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Spacer(Modifier.width(8.dp))

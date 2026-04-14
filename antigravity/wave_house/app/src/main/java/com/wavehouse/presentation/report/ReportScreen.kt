@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,9 +23,16 @@ import com.wavehouse.core.ui.theme.ChartOut
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportScreen() {
-    // Placeholder states for report filter
-    var selectedFilter by remember { mutableIntStateOf(0) }
+fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // UI state mapping to filter index
+    val selectedFilter = when(uiState.days) {
+        0 -> 0
+        7 -> 1
+        30 -> 2
+        else -> 0
+    }
     val filters = listOf("Hôm nay", "Tuần này", "Tháng này")
 
     Scaffold(
@@ -53,7 +61,7 @@ fun ReportScreen() {
                 filters.forEachIndexed { index, label ->
                     SegmentedButton(
                         selected = selectedFilter == index,
-                        onClick = { selectedFilter = index },
+                        onClick = { viewModel.onTimeFilterChanged(index) },
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = filters.size)
                     ) {
                         Text(label, style = MaterialTheme.typography.labelMedium)
@@ -62,24 +70,47 @@ fun ReportScreen() {
             }
 
             // Summary Cards
+            val vndFormat = java.text.NumberFormat.getNumberInstance(java.util.Locale("vi", "VN"))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 SummaryCard(
                     modifier = Modifier.weight(1f),
-                    title = "Tổng Nhập",
-                    value = "1,240",
-                    trend = "+12%",
-                    isPositive = true,
+                    title = "Doanh thu",
+                    value = "${vndFormat.format(uiState.stats.totalRevenue)}đ",
+                    trend = "+${String.format("%.1f", uiState.stats.shrinkageChangePercent)}%",
+                    isPositive = uiState.stats.shrinkageChangePercent >= 0,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                SummaryCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Lợi nhuận",
+                    value = "${vndFormat.format(uiState.stats.profit)}đ",
+                    trend = "",
+                    isPositive = uiState.stats.profit >= 0,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                SummaryCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Tỉ lệ hao hụt",
+                    value = "${String.format("%.1f", uiState.stats.shrinkageRate)}%",
+                    trend = "",
+                    isPositive = uiState.stats.shrinkageRate < 5.0,
                     color = ChartIn
                 )
                 SummaryCard(
                     modifier = Modifier.weight(1f),
-                    title = "Tổng Xuất",
-                    value = "850",
-                    trend = "-5%",
-                    isPositive = false,
+                    title = "Ngày giao dịch",
+                    value = uiState.stats.revenueByDay.size.toString(),
+                    trend = "",
+                    isPositive = true,
                     color = ChartOut
                 )
             }
@@ -99,20 +130,32 @@ fun ReportScreen() {
                 }
             }
 
-            // Top Products list placeholder
+            // Top Products list
             Text("Sản phẩm xuất nhiều nhất", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column {
-                    TopProductRow("1. Thùng Carton 60x40", "320 cái")
-                    HorizontalDivider()
-                    TopProductRow("2. Băng keo trong", "180 cuộn")
-                    HorizontalDivider()
-                    TopProductRow("3. Màng PE bọc hàng", "95 cuộn")
+            if (uiState.stats.topSellingProducts.isEmpty()) {
+                Text(
+                    "Chưa có dữ liệu",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column {
+                        uiState.stats.topSellingProducts.take(5).forEachIndexed { index, product ->
+                            TopProductRow(
+                                name = "${index + 1}. ${product.productName}",
+                                quantity = "${product.quantitySold.toInt()} ${product.unitName}"
+                            )
+                            if (index < uiState.stats.topSellingProducts.size - 1) {
+                                Spacer(Modifier.height(2.dp))
+                            }
+                        }
+                    }
                 }
             }
             

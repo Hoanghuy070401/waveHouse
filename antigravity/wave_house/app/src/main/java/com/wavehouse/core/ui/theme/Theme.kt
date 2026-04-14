@@ -15,6 +15,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+/**
+ * Organic Ledger Color Scheme — "The Living Ledger"
+ *
+ * Surface hierarchy: tonal layering defines boundaries (no 1px borders).
+ * Primary: Harvest Green. Shadows tinted with on_surface, not pure black.
+ */
+
 private val DarkColorScheme = darkColorScheme(
     primary = Primary80,
     onPrimary = Primary20,
@@ -32,16 +39,18 @@ private val DarkColorScheme = darkColorScheme(
     onError = Error20,
     errorContainer = Error30,
     onErrorContainer = Error90,
-    background = Neutral10,
-    onBackground = Neutral90,
-    surface = Neutral17,
-    onSurface = Neutral90,
-    surfaceVariant = Neutral22,
-    onSurfaceVariant = Neutral90,
+    background = DarkSurface,
+    onBackground = DarkOnSurface,
+    surface = DarkSurfaceContainer,
+    onSurface = DarkOnSurface,
+    surfaceVariant = DarkSurfaceContainerHigh,
+    onSurfaceVariant = DarkOnSurfaceVariant,
+    outline = Outline,
+    outlineVariant = OutlineVariant,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Primary40,
+    primary = Primary40,                         // #0d631b Harvest Green
     onPrimary = Primary100,
     primaryContainer = Primary90,
     onPrimaryContainer = Primary10,
@@ -57,12 +66,14 @@ private val LightColorScheme = lightColorScheme(
     onError = Primary100,
     errorContainer = Error90,
     onErrorContainer = Error10,
-    background = Neutral99,
-    onBackground = Neutral10,
-    surface = Primary100,
-    onSurface = Neutral10,
-    surfaceVariant = Neutral95,
-    onSurfaceVariant = Neutral10,
+    background = Surface,                        // #f7fbf0 organic paper
+    onBackground = OnSurface,                    // #181d17 ink-on-paper
+    surface = SurfaceContainerLowest,            // #ffffff interactive pop
+    onSurface = OnSurface,
+    surfaceVariant = SurfaceContainer,           // #ebefe5 content blocks
+    onSurfaceVariant = OnSurfaceVariant,         // #40493d metadata
+    outline = Outline,
+    outlineVariant = OutlineVariant,
 )
 
 @Composable

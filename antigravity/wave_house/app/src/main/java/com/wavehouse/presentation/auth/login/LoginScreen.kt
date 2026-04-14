@@ -4,45 +4,23 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Warehouse
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -51,23 +29,40 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+
+// Dark theme colors matching Stitch design
+private val DarkBg = Color(0xFF0D1F14)
+private val DarkSurface = Color(0xFF1A2E1E)
+private val DarkBorder = Color(0xFF2E4A34)
+private val TextWhite = Color(0xFFEEF4EE)
+private val TextMuted = Color(0xFF7A9B82)
+private val AccentGreen = Color(0xFF4CAF6E)
 
 @Composable
 fun LoginScreen(
     onNavigateToDashboard: () -> Unit,
+    onNavigateToRegister: () -> Unit = {},
+    onNavigateToEmailVerification: (String) -> Unit = {},
+    onNavigateToForgotPassword: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
 
-    // Navigate on success
     LaunchedEffect(uiState.loginSuccess) {
         if (uiState.loginSuccess) onNavigateToDashboard()
     }
 
-    // Show error snackbar
+    LaunchedEffect(uiState.requiresEmailVerification) {
+        if (uiState.requiresEmailVerification) {
+            onNavigateToEmailVerification(uiState.verificationEmail)
+            viewModel.clearVerificationFlag()
+        }
+    }
+
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -75,94 +70,142 @@ fun LoginScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF0F1A15), Color(0xFF050806))
+                )
+            )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(horizontal = 24.dp),
+                .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(Modifier.height(48.dp))
 
-            // Logo & Title
+            // ── FreshStock brand header ──────────────────────────
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.EnergySavingsLeaf, // Plant-like icon
+                    contentDescription = null,
+                    tint = AccentGreen,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "FreshStock",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentGreen
+                )
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            // ── Title block ──────────────────────────────────────
             AnimatedVisibility(
                 visible = true,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
+                enter = fadeIn() + slideInVertically(initialOffsetY = { -30 })
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Filled.Warehouse,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        text = "WaveHouse",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "Chào mừng trở lại",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        lineHeight = 42.sp,
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Đăng nhập để tiếp tục",
+                        text = "Manage your digital orchard with precision.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White.copy(alpha = 0.9f),
                         textAlign = TextAlign.Center
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // Email Field
-            OutlinedTextField(
+            // ── Glass Form Container ─────────────────────────────
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF1E2622).copy(alpha = 0.85f)
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+            // ── Email field ──────────────────────────────────────
+            DarkFieldLabel("Email address")
+            DarkTextField(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
-                label = { Text("Email") },
-                leadingIcon = {
-                    Icon(Icons.Filled.Email, contentDescription = null)
-                },
+                placeholder = "name@freshstock.com",
+                leadingIcon = Icons.Filled.Email,
                 isError = uiState.emailError != null,
-                supportingText = uiState.emailError?.let { { Text(it) } },
+                errorText = uiState.emailError,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 enabled = !uiState.isLoading
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Password Field
-            OutlinedTextField(
+            // ── Password field with Forgot ───────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Password",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = TextWhite,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "Quên mật khẩu?",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AccentGreen,
+                    modifier = Modifier.clickable { onNavigateToForgotPassword() }
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            DarkTextField(
                 value = uiState.password,
                 onValueChange = viewModel::onPasswordChange,
-                label = { Text("Mật khẩu") },
-                leadingIcon = {
-                    Icon(Icons.Filled.Lock, contentDescription = null)
-                },
-                trailingIcon = {
-                    IconButton(onClick = viewModel::togglePasswordVisibility) {
-                        Icon(
-                            imageVector = if (uiState.isPasswordVisible)
-                                Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = if (uiState.isPasswordVisible)
-                                "Ẩn mật khẩu" else "Hiện mật khẩu"
-                        )
-                    }
-                },
-                visualTransformation = if (uiState.isPasswordVisible)
-                    VisualTransformation.None else PasswordVisualTransformation(),
+                placeholder = "••••••••",
+                leadingIcon = Icons.Filled.Lock,
                 isError = uiState.passwordError != null,
-                supportingText = uiState.passwordError?.let { { Text(it) } },
+                errorText = uiState.passwordError,
+                isPassword = true,
+                isPasswordVisible = uiState.isPasswordVisible,
+                onTogglePassword = viewModel::togglePasswordVisibility,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
@@ -171,61 +214,187 @@ fun LoginScreen(
                     focusManager.clearFocus()
                     viewModel.login()
                 }),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // Forgot Password
-            TextButton(
-                onClick = { /* TODO: Navigate to ForgotPassword */ },
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Quên mật khẩu?")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Login Button
+            // ── Login button ─────────────────────────────────────
             Button(
                 onClick = viewModel::login,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = !uiState.isLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+                shape = CircleShape, // Pill shape
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF269D4F)) // Brighter green
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
                     Text(
-                        text = "Đăng nhập",
+                        "Đăng nhập →",
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
+
+            // ── Divider HOẶC ─────────────────────────────────────
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
+                Text("  HOẶC  ", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── Google button ─────────────────────────────────────
+            OutlinedButton(
+                onClick = { /* TODO: Google sign-in */ },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = CircleShape,
+                border = androidx.compose.foundation.BorderStroke(1.dp, AccentGreen),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = TextWhite
+                )
+            ) {
+                Text("G", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AccentGreen)
+                Spacer(Modifier.width(12.dp))
+                Text("Sign in with Google", fontWeight = FontWeight.SemiBold, color = TextWhite)
+            }
+
+            Spacer(Modifier.height(36.dp))
+
+            // ── Register link ─────────────────────────────────────
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Chưa có tài khoản?  ", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                Text(
+                    "Đăng ký",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentGreen,
+                    modifier = Modifier.clickable { onNavigateToRegister() }
+                )
+            }
+                }
+            }
+
+            Spacer(Modifier.height(36.dp))
+
+            // ── Footer ────────────────────────────────────────────
+            Text(
+                "© 2024 FreshStock Logistics. By signing in, you agree to\nour Terms of Harvest and Environmental Policy.",
+                style = MaterialTheme.typography.labelSmall,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            )
+
+            Spacer(Modifier.height(24.dp))
         }
 
-        // Snackbar
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         ) { data ->
             Snackbar(
                 snackbarData = data,
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                containerColor = Color(0xFF3E1F1F),
+                contentColor = Color(0xFFFFCDD2)
+            )
+        }
+    }
+}
+
+// ── Shared dark-theme field components ───────────────────────────────────────
+
+@Composable
+private fun DarkFieldLabel(label: String) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        color = TextWhite,
+        fontWeight = FontWeight.Medium,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+    )
+}
+
+@Composable
+private fun DarkTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    isError: Boolean = false,
+    errorText: String? = null,
+    isPassword: Boolean = false,
+    isPasswordVisible: Boolean = false,
+    onTogglePassword: (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    enabled: Boolean = true
+) {
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = {
+                Text(placeholder, color = TextMuted, style = MaterialTheme.typography.bodyMedium)
+            },
+            leadingIcon = {
+                Icon(leadingIcon, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
+            },
+            trailingIcon = if (isPassword && onTogglePassword != null) {
+                {
+                    IconButton(onClick = onTogglePassword) {
+                        Icon(
+                            if (isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                            contentDescription = null,
+                            tint = TextMuted
+                        )
+                    }
+                }
+            } else null,
+            visualTransformation = if (isPassword && !isPasswordVisible)
+                PasswordVisualTransformation() else VisualTransformation.None,
+            isError = isError,
+            singleLine = true,
+            enabled = enabled,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = TextWhite,
+                unfocusedTextColor = TextWhite,
+                disabledTextColor = TextMuted,
+                errorTextColor = TextWhite,
+                focusedContainerColor = Color(0xFF1E2822),
+                unfocusedContainerColor = Color(0xFF1E2822),
+                disabledContainerColor = Color(0xFF1E2822),
+                cursorColor = AccentGreen,
+                focusedBorderColor = AccentGreen,
+                unfocusedBorderColor = Color(0xFF385241),
+                errorBorderColor = Color(0xFFFFB4AB),
+                errorCursorColor = Color(0xFFFFB4AB),
+                focusedLeadingIconColor = AccentGreen,
+                unfocusedLeadingIconColor = AccentGreen,
+                focusedTrailingIconColor = AccentGreen,
+                unfocusedTrailingIconColor = AccentGreen
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (isError && errorText != null) {
+            Text(
+                errorText,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFFFFB4AB),
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
             )
         }
     }

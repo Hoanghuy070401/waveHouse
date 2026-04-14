@@ -1,16 +1,19 @@
 [versions]
 # Core
-agp = "8.5.2"
+agp = "8.7.3"
 kotlin = "2.0.21"
 ksp = "2.0.21-1.0.28"
-coreKtx = "1.13.1"
+coreKtx = "1.15.0"
 
 # Compose
-composeBom = "2024.11.00"
-activityCompose = "1.9.3"
+composeBom = "2024.12.01"
+activityCompose = "1.10.1"
 
 # Lifecycle & ViewModel
 lifecycle = "2.8.7"
+
+# Material Components (XML themes - Theme.Material3.DayNight.NoActionBar)
+material = "1.12.0"
 
 # Navigation
 navigationCompose = "2.8.3"
@@ -71,6 +74,9 @@ compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+
+# Material Components for Android (provides XML Theme.Material3.* styles)
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 
