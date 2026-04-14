@@ -114,6 +114,10 @@ class AuthRepositoryImpl @Inject constructor(
         firebaseAuth.sendPasswordResetEmail(email).await()
     }
 
+    override suspend fun confirmPasswordReset(oobCode: String, newPassword: String): ApiResult<Unit> = safeApiCall {
+        firebaseAuth.confirmPasswordReset(oobCode, newPassword).await()
+    }
+
     override suspend fun updateProfile(name: String, avatarUrl: String?): ApiResult<Unit> =
         safeApiCall {
             val uid = firebaseAuth.currentUser?.uid ?: throw Exception("Chưa đăng nhập")

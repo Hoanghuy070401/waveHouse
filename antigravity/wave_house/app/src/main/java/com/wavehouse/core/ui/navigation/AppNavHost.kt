@@ -25,6 +25,7 @@ import com.wavehouse.presentation.auth.splash.SplashScreen
 import com.wavehouse.presentation.auth.emailverification.EmailVerificationScreen
 import com.wavehouse.presentation.auth.forgotpassword.ForgotPasswordScreen
 import com.wavehouse.presentation.auth.forgotpassword.ForgotPasswordSuccessScreen
+import com.wavehouse.presentation.auth.forgotpassword.NewPasswordScreen
 import com.wavehouse.presentation.dashboard.DashboardScreen
 import com.wavehouse.presentation.product.addedit.AddEditProductScreen
 import com.wavehouse.presentation.product.detail.ProductDetailScreen
@@ -86,6 +87,7 @@ private val routesWithoutBottomBar = setOf(
     Routes.EmailVerification.route,
     Routes.ForgotPassword.route,
     Routes.ForgotPasswordSuccess.route,
+    Routes.NewPassword.route,
     Routes.ProductDetail.route,
     Routes.AddProduct.route,
     Routes.EditProduct.route,
@@ -255,6 +257,29 @@ fun AppNavHost(
                 val email = backStackEntry.arguments?.getString("email") ?: ""
                 ForgotPasswordSuccessScreen(
                     email = email,
+                    onNavigateToLogin = {
+                        navController.navigate(Routes.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // ── New Password (Deep Link from email) ────────────────────────
+            composable(
+                route = Routes.NewPassword.route,
+                arguments = listOf(navArgument("oobCode") { defaultValue = "" }),
+                deepLinks = listOf(
+                    androidx.navigation.navDeepLink {
+                        uriPattern = "${Routes.NewPassword.deepLinkPattern}?oobCode={oobCode}"
+                    }
+                ),
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
+            ) { backStackEntry ->
+                val oobCode = backStackEntry.arguments?.getString("oobCode") ?: ""
+                NewPasswordScreen(
+                    oobCode = oobCode,
                     onNavigateToLogin = {
                         navController.navigate(Routes.Login.route) {
                             popUpTo(0) { inclusive = true }
