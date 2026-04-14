@@ -1,6 +1,7 @@
 package com.wavehouse.presentation.auth.forgotpassword
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -56,9 +57,17 @@ fun ForgotPasswordSuccessScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Start countdown on first composition
+    // Start countdown only if not already running (safe across rotation/recompose)
     LaunchedEffect(Unit) {
-        viewModel.startCountdown()
+        viewModel.startCountdownIfIdle()
+    }
+
+    // Show Toast when resend fails
+    LaunchedEffect(uiState.resendErrorMessage) {
+        uiState.resendErrorMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearResendError()
+        }
     }
 
     Box(
@@ -182,7 +191,11 @@ fun ForgotPasswordSuccessScreen(
                         try {
                             context.startActivity(intent)
                         } catch (_: Exception) {
-                            // Fallback: just stay on screen
+                            Toast.makeText(
+                                context,
+                                "Không tìm thấy ứng dụng email trên thiết bị.",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     },
                 contentAlignment = Alignment.Center
