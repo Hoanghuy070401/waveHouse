@@ -413,7 +413,8 @@ fun AppNavHost(
             ) {
                 StockInScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToScanner = { navController.navigate(Routes.BarcodeScanner.route) }
+                    onNavigateToScanner = { navController.navigate(Routes.BarcodeScanner.route) },
+                    onNavigateToAddProduct = { navController.navigate(Routes.AddProduct.route) }
                 )
             }
 

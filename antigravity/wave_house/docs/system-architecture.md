@@ -34,7 +34,7 @@
 │  ┌──────────▼───────┐     ┌────────────▼──────────────────┐ │
 │  │  Remote Sources   │     │      Local Sources            │ │
 │  │  ┌─────────────┐ │     │  ┌─────────────┐              │ │
-│  │  │  Firestore  │ │     │  │    Room DB  │              │ │
+│  │  │ Realtime DB │ │     │  │    Room DB  │              │ │
 │  │  │  Retrofit   │ │     │  │  DataStore  │              │ │
 │  │  └─────────────┘ │     │  └─────────────┘              │ │
 │  └───────────────────┘     └───────────────────────────────┘ │
@@ -54,7 +54,7 @@ app/
 │   ├── core/                        # Shared utilities
 │   │   ├── di/                      # Hilt modules
 │   │   │   ├── NetworkModule.kt     # Retrofit, OkHttp
-│   │   │   ├── FirebaseModule.kt    # Firestore, Auth, Storage
+│   │   │   ├── FirebaseModule.kt    # Realtime DB, Auth, Storage
 │   │   │   ├── DatabaseModule.kt    # Room
 │   │   │   └── RepositoryModule.kt  # Bind interfaces → impl
 │   │   ├── network/
@@ -78,7 +78,7 @@ app/
 │   │   │   │   └── entity/          # Room entities
 │   │   │   └── datastore/           # User preferences
 │   │   ├── remote/
-│   │   │   ├── firebase/            # Firestore data sources
+│   │   │   ├── firebase/            # Realtime Database sources
 │   │   │   └── api/                 # Retrofit services + DTOs
 │   │   └── repository/              # Repository implementations
 │   │
@@ -137,7 +137,7 @@ Root NavHost
 
 ---
 
-## 4. Firestore Data Model
+## 4. Realtime Database Data Model
 
 ```
 /users/{userId}
@@ -181,7 +181,7 @@ ViewModel → UseCase → Repository
                           │
                     ┌─────┴──────┐
                     │            │
-              Local (Room)   Remote (Firestore)
+              Local (Room)   Remote (Realtime DB)
                     │            │
                     └─────┬──────┘
                           │ Single Source of Truth
@@ -190,8 +190,8 @@ ViewModel → UseCase → Repository
 ```
 
 **Quy tắc:**
-1. Write → Room trước → sync lên Firestore
-2. Read → Room cache → Firestore snapshot listener cập nhật Room
+1. Write → Room trước → sync lên Realtime Database
+2. Read → Room cache → Realtime Database listener cập nhật Room
 3. Conflict → Timestamp-based last-write-wins
 
 ---
@@ -199,7 +199,7 @@ ViewModel → UseCase → Repository
 ## 6. Security Architecture
 
 ```
-Firestore Security Rules
+Realtime Database Security Rules
 ├── /users   → self read/write; admin read all
 ├── /products → auth required; role-based write
 ├── /stock   → warehouseId match; thủ kho write

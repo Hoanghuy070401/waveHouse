@@ -180,9 +180,9 @@ private fun DataSnapshot.toProduct(): Product? {
             imageUrl = child("imageUrl").getValue(String::class.java),
             costPrice = child("costPrice").getValue(Double::class.java) ?: 0.0,
             salePrice = child("salePrice").getValue(Double::class.java) ?: 0.0,
-            minStock = child("minStock").getValue(Long::class.java)?.toInt() ?: 0,
+            minStock = child("minStock").getValue(Double::class.java) ?: 0.0,
             warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
-            currentStock = child("currentStock").getValue(Long::class.java)?.toInt() ?: 0,
+            currentStock = child("currentStock").getValue(Double::class.java) ?: 0.0,
             createdAt = child("createdAt").getValue(Long::class.java) ?: System.currentTimeMillis(),
             updatedAt = child("updatedAt").getValue(Long::class.java) ?: System.currentTimeMillis()
         )

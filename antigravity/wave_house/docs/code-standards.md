@@ -17,7 +17,7 @@
 | UseCase | `XxxUseCase` | `GetProductsUseCase` |
 | Repository (interface) | `XxxRepository` | `ProductRepository` |
 | Repository (impl) | `XxxRepositoryImpl` | `ProductRepositoryImpl` |
-| Data Source | `XxxDataSource` | `ProductFirestoreDataSource` |
+| Data Source | `XxxDataSource` | `ProductRemoteDataSource` |
 | Room Entity | `XxxEntity` | `ProductEntity` |
 | Room DAO | `XxxDao` | `ProductDao` |
 | DTO (API) | `XxxDto` | `ProductDto` |
@@ -33,7 +33,7 @@ var isLoading: Boolean = false
 
 // ✅ SCREAMING_SNAKE_CASE cho constants
 const val DEFAULT_PAGE_SIZE = 20
-const val FIRESTORE_PRODUCTS = "products"
+const val DB_PRODUCTS = "products"
 
 // ✅ Prefix 'is/has/can' cho Boolean
 val isLoggedIn: Boolean
@@ -82,7 +82,7 @@ class ProductViewModel @Inject constructor(
 }
 
 // ❌ Không inject Context vào ViewModel
-// ❌ Không gọi Firestore trực tiếp từ ViewModel
+// ❌ Không gọi Database/API trực tiếp từ ViewModel
 ```
 
 ### 2.3 UseCase Rules
@@ -113,7 +113,7 @@ interface ProductRepository {
 
 // ✅ Implementation trong Data layer
 class ProductRepositoryImpl @Inject constructor(
-    private val firestoreSource: ProductFirestoreDataSource,
+    private val remoteSource: ProductRemoteDataSource,
     private val localDao: ProductDao
 ) : ProductRepository { ... }
 ```
@@ -197,26 +197,28 @@ inline fun <T, R> ApiResult<T>.map(transform: (T) -> R): ApiResult<R> = when (th
 ## 5. Coroutines & Flow
 
 ```kotlin
-// ✅ Dùng callbackFlow cho Firestore listeners
+// ✅ Dùng callbackFlow cho Firebase Database listeners
 fun getProductsFlow(warehouseId: String): Flow<ApiResult<List<Product>>> = callbackFlow {
     trySend(ApiResult.Loading)
-    val listener = firestore.collection("products")
-        .whereEqualTo("warehouseId", warehouseId)
-        .addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                trySend(ApiResult.Error(error.message ?: "Unknown error"))
-                return@addSnapshotListener
+    val listener = database.getReference("products")
+        .orderByChild("warehouseId").equalTo(warehouseId)
+        .addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val products = snapshot.children.mapNotNull { it.getValue(ProductDto::class.java)?.toProduct() }
+                trySend(ApiResult.Success(products))
             }
-            val products = snapshot?.documents?.mapNotNull { it.toProduct() } ?: emptyList()
-            trySend(ApiResult.Success(products))
-        }
-    awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(ApiResult.Error(error.message))
+            }
+        })
+    awaitClose { database.getReference("products").removeEventListener(listener) }
 }
 
 // ✅ Dùng withContext(Dispatchers.IO) cho suspend calls
 suspend fun createProduct(product: Product): ApiResult<Unit> = withContext(Dispatchers.IO) {
     try {
-        firestore.collection("products").add(product.toDto()).await()
+        val ref = database.getReference("products").push()
+        ref.setValue(product.toDto()).await()
         ApiResult.Success(Unit)
     } catch (e: Exception) {
         ApiResult.Error(e.message ?: "Failed to create product")
@@ -236,11 +238,9 @@ object FirebaseModule {
 
     @Provides
     @Singleton
-    fun provideFirestore(): FirebaseFirestore =
-        FirebaseFirestore.getInstance().also {
-            it.firestoreSettings = firestoreSettings {
-                isPersistenceEnabled = true // Offline support
-            }
+    fun provideFirebaseDatabase(): FirebaseDatabase =
+        FirebaseDatabase.getInstance().also {
+            it.setPersistenceEnabled(true) // Offline support
         }
 
     @Provides
@@ -250,7 +250,7 @@ object FirebaseModule {
 
 // ✅ Constructor injection preferred
 class ProductRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore,
+    private val database: FirebaseDatabase,
     private val productDao: ProductDao
 ) : ProductRepository
 ```
@@ -295,7 +295,7 @@ chore: 🔧 cập nhật dependencies Gradle
 ## 9. Điều Cấm Tuyệt Đối
 
 - ❌ Hardcode credentials/API keys trong source code
-- ❌ Gọi Firestore/API trực tiếp từ Composable hoặc ViewModel
+- ❌ Gọi Database trực tiếp từ Composable hoặc ViewModel
 - ❌ `runBlocking` trong production code
 - ❌ Ignore exception mà không log
 - ❌ `var` trong data class domain model (dùng `val` + `copy()`)

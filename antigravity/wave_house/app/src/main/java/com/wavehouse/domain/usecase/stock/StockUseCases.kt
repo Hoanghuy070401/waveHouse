@@ -37,11 +37,11 @@ class CreateStockInUseCase @Inject constructor(
     suspend operator fun invoke(
         productId: String,
         warehouseId: String,
-        quantity: Int,
+        quantity: Double,
         supplierId: String? = null,
         note: String? = null
     ): ApiResult<Unit> {
-        if (quantity <= 0) return ApiResult.Error("Số lượng nhập phải lớn hơn 0")
+        if (quantity <= 0.0) return ApiResult.Error("Số lượng nhập phải lớn hơn 0")
         return stockRepository.createStockIn(productId, warehouseId, quantity, supplierId, note)
     }
 }
@@ -52,13 +52,13 @@ class CreateStockOutUseCase @Inject constructor(
     suspend operator fun invoke(
         productId: String,
         warehouseId: String,
-        quantity: Int,
-        currentStock: Int,
+        quantity: Double,
+        currentStock: Double,
         note: String? = null
     ): ApiResult<Unit> {
-        if (quantity <= 0) return ApiResult.Error("Số lượng xuất phải lớn hơn 0")
+        if (quantity <= 0.0) return ApiResult.Error("Số lượng xuất phải lớn hơn 0")
         if (quantity > currentStock) return ApiResult.Error(
-            "Số tồn trong kho không đủ, hiện tại tồn $currentStock"
+            "Số tồn trong kho không đủ, hiện tại tồn ${formatQty(currentStock)}"
         )
         return stockRepository.createStockOut(productId, warehouseId, quantity, note)
     }
@@ -70,14 +70,14 @@ class CreateShrinkageUseCase @Inject constructor(
     suspend operator fun invoke(
         productId: String,
         warehouseId: String,
-        quantity: Int,
-        currentStock: Int,
+        quantity: Double,
+        currentStock: Double,
         reason: ShrinkageReason,
         note: String? = null
     ): ApiResult<Unit> {
-        if (quantity <= 0) return ApiResult.Error("Số lượng hao hụt phải lớn hơn 0")
+        if (quantity <= 0.0) return ApiResult.Error("Số lượng hao hụt phải lớn hơn 0")
         if (quantity > currentStock) return ApiResult.Error(
-            "Số tồn trong kho không đủ, hiện tại tồn $currentStock"
+            "Số tồn trong kho không đủ, hiện tại tồn ${formatQty(currentStock)}"
         )
         return stockRepository.createShrinkage(productId, warehouseId, quantity, reason, note)
     }
@@ -97,3 +97,6 @@ class GetReportStatsUseCase @Inject constructor(
         stockRepository.getReportStats(warehouseId, days)
 }
 
+/** Format qty for display: show decimal only when needed */
+private fun formatQty(qty: Double): String =
+    if (qty % 1.0 == 0.0) qty.toLong().toString() else qty.toString()

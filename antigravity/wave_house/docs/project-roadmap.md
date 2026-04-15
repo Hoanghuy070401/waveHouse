@@ -6,6 +6,8 @@
 - [x] Thiết lập Jetpack Compose Theme & Navigation Graph nền tảng.
 - [x] Đăng nhập & Đăng ký sử dụng Firebase Auth.
 - [x] Xử lý luồng Quên mật khẩu, Xác thực Email, và Deep Link thiết lập mật khẩu mới.
+- [x] Áp dụng Role-based Access Control (RBAC) và luồng phê duyệt Admin.
+- [x] Migrate Remote source sang Firebase Realtime Database.
 - [x] Xây dựng các interface Repository và Use Case ban đầu.
 
 ## Phase 2: Màn Hình Chính & Sản Phẩm (Đang triển khai)
@@ -17,11 +19,11 @@
 ## Phase 3: Quản Lý Tồn Kho & Bán Hàng
 - [ ] Thiết lập luồng Nhập kho (Inbound) và Xuất kho (Outbound).
 - [ ] Tạo module Quét mã vạch tự động trừ tồn kho.
-- [ ] Đồng bộ hóa dữ liệu realtime với Firestore (Single Source of Truth).
+- [ ] Đồng bộ hóa dữ liệu realtime với Realtime Database (Single Source of Truth).
 - [ ] Offline caching bằng Room Database.
 
 ## Phase 4: Quản Trị Hệ Thống & Tính Năng Mở Rộng
 - [ ] Quản lý nhà cung cấp (Suppliers).
 - [ ] Tích hợp push notification cảnh báo tồn kho thấp.
 - [ ] Chức năng trích xuất / xuất báo cáo căn bản.
-- [ ] Tinh chỉnh hiệu năng ứng dụng, rà soát lại rule bảo mật của Firestore.
+- [ ] Tinh chỉnh hiệu năng ứng dụng, rà soát lại rule bảo mật của Realtime Database.

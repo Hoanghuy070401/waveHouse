@@ -48,7 +48,7 @@ class ShrinkageViewModel @Inject constructor(
             productRepository.getProducts(currentUser!!.warehouseId).collectLatest { result ->
                 when (result) {
                     is ApiResult.Success -> {
-                        _allProducts.value = result.data.filter { it.currentStock > 0 }
+                        _allProducts.value = result.data.filter { it.currentStock > 0.0 }
                         filterProducts(_uiState.value.searchQuery)
                         _uiState.update { it.copy(isLoading = false) }
                     }
@@ -97,7 +97,7 @@ class ShrinkageViewModel @Inject constructor(
         val user = currentUser ?: return
         val state = _uiState.value
         val product = state.selectedProduct ?: return
-        val qty = state.quantity.toIntOrNull() ?: return
+        val qty = state.quantity.toDoubleOrNull() ?: return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null) }

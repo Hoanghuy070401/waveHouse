@@ -27,7 +27,7 @@
 | Architecture | MVVM + Clean Architecture |
 | DI | Hilt |
 | Networking | Retrofit 2 + OkHttp 4 |
-| Cloud DB | Firebase Firestore |
+| Cloud DB | Firebase Realtime Database |
 | Auth | Firebase Authentication |
 | Local DB | Room (offline cache) |
 | Barcode | ML Kit + CameraX |

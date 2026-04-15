@@ -15,7 +15,7 @@ import javax.inject.Inject
 data class StockOutUiState(
     val productId: String = "",
     val productName: String = "",
-    val currentStock: Int = -1,
+    val currentStock: Double = -1.0,
     val unit: String = "cái",
     val quantity: String = "",
     val note: String = "",
@@ -48,15 +48,19 @@ class StockOutViewModel @Inject constructor(
     }
 
     fun onQuantityChange(v: String) {
-        val filtered = v.filter { it.isDigit() }
-        val qty = filtered.toIntOrNull() ?: 0
+        val filtered = v.replace(',', '.').filter { it.isDigit() || it == '.' }
+            .let { s ->
+                val dot = s.indexOf('.')
+                if (dot == -1) s
+                else s.substring(0, dot + 1) + s.substring(dot + 1).filter { it.isDigit() }
+            }
+        val qty = filtered.toDoubleOrNull() ?: 0.0
         val currentStock = _uiState.value.currentStock
 
-        // Real-time validation: check against current stock
         val error = when {
             filtered.isBlank() -> null
-            qty <= 0 -> "Số lượng xuất phải lớn hơn 0"
-            currentStock >= 0 && qty > currentStock ->
+            qty <= 0.0 -> "Số lượng xuất phải lớn hơn 0"
+            currentStock >= 0.0 && qty > currentStock ->
                 "Số tồn trong kho không đủ, hiện tại tồn $currentStock"
             else -> null
         }
@@ -66,16 +70,16 @@ class StockOutViewModel @Inject constructor(
     fun onNoteChange(v: String) = _uiState.update { it.copy(note = v) }
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
     fun resetForm() = _uiState.update {
-        it.copy(productId = "", productName = "", currentStock = -1, quantity = "", note = "", success = false)
+        it.copy(productId = "", productName = "", currentStock = -1.0, quantity = "", note = "", success = false)
     }
 
     fun submit() {
         val state = _uiState.value
         val productError = if (state.productId.isBlank()) "Vui lòng chọn sản phẩm" else null
-        val qty = state.quantity.toIntOrNull()
+        val qty = state.quantity.toDoubleOrNull()
         val quantityError = when {
             state.quantity.isBlank() -> "Vui lòng nhập số lượng"
-            qty == null || qty <= 0 -> "Số lượng xuất phải lớn hơn 0"
+            qty == null || qty <= 0.0 -> "Số lượng xuất phải lớn hơn 0"
             else -> null
         }
 

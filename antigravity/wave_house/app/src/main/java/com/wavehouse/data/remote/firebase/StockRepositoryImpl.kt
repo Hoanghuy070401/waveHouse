@@ -103,13 +103,15 @@ class StockRepositoryImpl @Inject constructor(
     override suspend fun createStockIn(
         productId: String,
         warehouseId: String,
-        quantity: Int,
+        quantity: Double,
         supplierId: String?,
         note: String?
     ): ApiResult<Unit> = safeApiCall {
         val itemPath = "stock/$warehouseId/items/$productId"
+        val productPath = "products/$productId"
+
         val currentSnap = database.getReference(itemPath).get().await()
-        val currentQty = currentSnap.child("quantity").getValue(Long::class.java)?.toInt() ?: 0
+        val currentQty = currentSnap.child("quantity").getValue(Double::class.java) ?: 0.0
         val newQty = currentQty + quantity
 
         val entryId = entriesRef.push().key ?: UUID.randomUUID().toString()
@@ -120,6 +122,7 @@ class StockRepositoryImpl @Inject constructor(
             "$itemPath/productId" to productId,
             "$itemPath/warehouseId" to warehouseId,
             "$itemPath/lastUpdated" to System.currentTimeMillis(),
+            "$productPath/currentStock" to newQty,
             "$entryPath/id" to entryId,
             "$entryPath/type" to "IN",
             "$entryPath/productId" to productId,
@@ -135,21 +138,24 @@ class StockRepositoryImpl @Inject constructor(
     override suspend fun createStockOut(
         productId: String,
         warehouseId: String,
-        quantity: Int,
+        quantity: Double,
         note: String?
     ): ApiResult<Unit> = safeApiCall {
         val itemPath = "stock/$warehouseId/items/$productId"
+        val productPath = "products/$productId"
         val currentSnap = database.getReference(itemPath).get().await()
-        val currentQty = currentSnap.child("quantity").getValue(Long::class.java)?.toInt() ?: 0
-        
+        val currentQty = currentSnap.child("quantity").getValue(Double::class.java) ?: 0.0
+
         if (quantity > currentQty) throw Exception("Tồn kho không đủ")
+        val newQty = currentQty - quantity
 
         val entryId = entriesRef.push().key ?: UUID.randomUUID().toString()
         val entryPath = "stock_entries/$entryId"
 
         val updates = mapOf(
-            "$itemPath/quantity" to (currentQty - quantity),
+            "$itemPath/quantity" to newQty,
             "$itemPath/lastUpdated" to System.currentTimeMillis(),
+            "$productPath/currentStock" to newQty,
             "$entryPath/id" to entryId,
             "$entryPath/type" to "OUT",
             "$entryPath/productId" to productId,
@@ -164,7 +170,7 @@ class StockRepositoryImpl @Inject constructor(
     override suspend fun adjustStock(
         productId: String,
         warehouseId: String,
-        newQuantity: Int,
+        newQuantity: Double,
         note: String?
     ): ApiResult<Unit> = safeApiCall {
         val itemPath = "stock/$warehouseId/items/$productId"
@@ -172,27 +178,32 @@ class StockRepositoryImpl @Inject constructor(
             "quantity" to newQuantity,
             "lastUpdated" to System.currentTimeMillis()
         )).await()
+        database.getReference("products/$productId")
+            .updateChildren(mapOf("currentStock" to newQuantity)).await()
     }
 
     override suspend fun createShrinkage(
         productId: String,
         warehouseId: String,
-        quantity: Int,
+        quantity: Double,
         reason: ShrinkageReason,
         note: String?
     ): ApiResult<Unit> = safeApiCall {
         val itemPath = "stock/$warehouseId/items/$productId"
+        val productPath = "products/$productId"
         val currentSnap = database.getReference(itemPath).get().await()
-        val currentQty = currentSnap.child("quantity").getValue(Long::class.java)?.toInt() ?: 0
-        
+        val currentQty = currentSnap.child("quantity").getValue(Double::class.java) ?: 0.0
+
         if (quantity > currentQty) throw Exception("Tồn kho không đủ")
+        val newQty = currentQty - quantity
 
         val entryId = entriesRef.push().key ?: UUID.randomUUID().toString()
         val entryPath = "stock_entries/$entryId"
 
         val updates = mapOf(
-            "$itemPath/quantity" to (currentQty - quantity),
+            "$itemPath/quantity" to newQty,
             "$itemPath/lastUpdated" to System.currentTimeMillis(),
+            "$productPath/currentStock" to newQty,
             "$entryPath/id" to entryId,
             "$entryPath/type" to "SHRINKAGE",
             "$entryPath/productId" to productId,
@@ -246,8 +257,8 @@ private fun DataSnapshot.toStockItem(): StockItem? {
             productSku = child("productSku").getValue(String::class.java) ?: "",
             productImageUrl = child("productImageUrl").getValue(String::class.java),
             warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
-            quantity = child("quantity").getValue(Long::class.java)?.toInt() ?: 0,
-            minStock = child("minStock").getValue(Long::class.java)?.toInt() ?: 0,
+            quantity = child("quantity").getValue(Double::class.java) ?: 0.0,
+            minStock = child("minStock").getValue(Double::class.java) ?: 0.0,
             salePrice = child("salePrice").getValue(Double::class.java) ?: 0.0,
             lastUpdated = child("lastUpdated").getValue(Long::class.java) ?: 0L,
             updatedBy = child("updatedBy").getValue(String::class.java) ?: ""
@@ -264,7 +275,7 @@ private fun DataSnapshot.toStockEntry(): StockEntry? {
             productName = child("productName").getValue(String::class.java) ?: "",
             productSku = child("productSku").getValue(String::class.java) ?: "",
             warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
-            quantity = child("quantity").getValue(Long::class.java)?.toInt() ?: 0,
+            quantity = child("quantity").getValue(Double::class.java) ?: 0.0,
             note = child("note").getValue(String::class.java),
             supplierId = child("supplierId").getValue(String::class.java),
             supplierName = child("supplierName").getValue(String::class.java),

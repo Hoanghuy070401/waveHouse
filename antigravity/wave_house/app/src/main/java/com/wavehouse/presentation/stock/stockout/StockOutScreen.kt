@@ -83,7 +83,7 @@ fun StockOutScreen(
             if (uiState.currentStock >= 0) {
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = if (uiState.currentStock == 0)
+                        containerColor = if (uiState.currentStock == 0.0)
                             MaterialTheme.colorScheme.errorContainer
                         else MaterialTheme.colorScheme.surfaceVariant
                     )
@@ -97,7 +97,7 @@ fun StockOutScreen(
                             "${uiState.currentStock} ${uiState.unit}",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (uiState.currentStock == 0) StockOut
+                            color = if (uiState.currentStock == 0.0) StockOut
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -110,7 +110,7 @@ fun StockOutScreen(
                 onValueChange = viewModel::onQuantityChange,
                 label = { Text("Số lượng xuất *") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 isError = uiState.quantityError != null,
                 supportingText = uiState.quantityError?.let { { Text(it) } },
                 singleLine = true

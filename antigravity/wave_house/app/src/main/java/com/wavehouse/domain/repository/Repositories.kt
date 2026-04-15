@@ -44,7 +44,7 @@ interface StockRepository {
     suspend fun createStockIn(
         productId: String,
         warehouseId: String,
-        quantity: Int,
+        quantity: Double,
         supplierId: String?,
         note: String?
     ): ApiResult<Unit>
@@ -52,14 +52,14 @@ interface StockRepository {
     suspend fun createStockOut(
         productId: String,
         warehouseId: String,
-        quantity: Int,
+        quantity: Double,
         note: String?
     ): ApiResult<Unit>
 
     suspend fun createShrinkage(
         productId: String,
         warehouseId: String,
-        quantity: Int,
+        quantity: Double,
         reason: ShrinkageReason,
         note: String?
     ): ApiResult<Unit>
@@ -67,7 +67,7 @@ interface StockRepository {
     suspend fun adjustStock(
         productId: String,
         warehouseId: String,
-        newQuantity: Int,
+        newQuantity: Double,
         note: String?
     ): ApiResult<Unit>
 

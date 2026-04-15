@@ -54,14 +54,14 @@ data class Product(
     val imageUrl: String? = null,
     val costPrice: Double = 0.0,       // Giá nhập
     val salePrice: Double = 0.0,       // Giá bán
-    val minStock: Int = 0,
+    val minStock: Double = 0.0,
     val warehouseId: String,
-    val currentStock: Int = 0,
+    val currentStock: Double = 0.0,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
     val stockStatus: StockStatus get() = when {
-        currentStock <= 0 -> StockStatus.OUT_OF_STOCK
+        currentStock <= 0.0 -> StockStatus.OUT_OF_STOCK
         currentStock <= minStock -> StockStatus.LOW_STOCK
         else -> StockStatus.IN_STOCK
     }
@@ -97,14 +97,14 @@ data class StockItem(
     val productSku: String,
     val productImageUrl: String?,
     val warehouseId: String,
-    val quantity: Int,
-    val minStock: Int,
+    val quantity: Double,
+    val minStock: Double,
     val salePrice: Double = 0.0,
     val lastUpdated: Long,
     val updatedBy: String
 ) {
     val stockStatus: StockStatus get() = when {
-        quantity <= 0 -> StockStatus.OUT_OF_STOCK
+        quantity <= 0.0 -> StockStatus.OUT_OF_STOCK
         quantity <= minStock -> StockStatus.LOW_STOCK
         else -> StockStatus.IN_STOCK
     }
@@ -136,7 +136,7 @@ data class StockEntry(
     val productName: String,
     val productSku: String,
     val warehouseId: String,
-    val quantity: Int,
+    val quantity: Double,
     val note: String? = null,
     val supplierId: String? = null,
     val supplierName: String? = null,
@@ -181,7 +181,7 @@ enum class OrderStatus(val label: String) {
 /** Cart item — inmemory only, ko persist */
 data class CartItem(
     val product: Product,
-    val quantity: Int
+    val quantity: Double
 ) {
     val lineTotal: Double get() = product.salePrice * quantity
 }
@@ -199,7 +199,7 @@ data class Order(
     val createdAt: Long = System.currentTimeMillis(),
     val paidAt: Long? = null
 ) {
-    val itemCount: Int get() = items.sumOf { it.quantity }
+    val itemCount: Int get() = items.sumOf { it.quantity }.toInt()
 }
 
 /** Domain model: OrderItem snapshot (serialized in Firestore) */
@@ -208,7 +208,7 @@ data class OrderItem(
     val productName: String,
     val productSku: String,
     val unitPrice: Double,
-    val quantity: Int
+    val quantity: Double
 ) {
     val lineTotal: Double get() = unitPrice * quantity
 }
@@ -246,8 +246,8 @@ data class DashboardStats(
     val outOfStockCount: Int = 0,
     val todayRevenue: Double = 0.0,
     val todayOrders: Int = 0,
-    val todayStockIn: Int = 0,
-    val todayStockOut: Int = 0,
+    val todayStockIn: Double = 0.0,
+    val todayStockOut: Double = 0.0,
     val revenueChangePercent: Double = 0.0,  // +12% so với hôm qua
     val weeklyRevenueData: List<Double> = emptyList(),
     val weeklyInData: List<Int> = emptyList(),

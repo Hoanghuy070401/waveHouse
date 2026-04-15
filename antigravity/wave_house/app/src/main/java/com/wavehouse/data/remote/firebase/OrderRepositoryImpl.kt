@@ -52,8 +52,8 @@ class OrderRepositoryImpl @Inject constructor(
         for (item in order.items) {
             val productRef = database.getReference("products/${item.productId}")
             val currentStockSnap = productRef.child("currentStock").get().await()
-            val currentStock = currentStockSnap.getValue(Long::class.java)?.toInt() ?: 0
-            updates["products/${item.productId}/currentStock"] = currentStock - item.quantity
+            val currentStock = currentStockSnap.getValue(Double::class.java) ?: 0.0
+            updates["products/${item.productId}/currentStock"] = (currentStock - item.quantity).coerceAtLeast(0.0)
         }
 
         database.reference.updateChildren(updates).await()
@@ -129,7 +129,7 @@ class OrderRepositoryImpl @Inject constructor(
                     productName = it["productName"] as? String ?: "",
                     productSku = it["productSku"] as? String ?: "",
                     unitPrice = (it["unitPrice"] as? Number)?.toDouble() ?: 0.0,
-                    quantity = (it["quantity"] as? Number)?.toInt() ?: 0
+                    quantity = (it["quantity"] as? Number)?.toDouble() ?: 0.0
                 )
             } ?: emptyList()
 

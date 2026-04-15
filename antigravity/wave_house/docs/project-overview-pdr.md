@@ -29,7 +29,7 @@
 
 ### 3.1 Xác Thực & Phân Quyền
 - [x] Đăng nhập Email/Password (Firebase Auth)
-- [ ] Phân quyền theo Role (Admin/Thủ kho/Kế toán)
+- [x] Phân quyền theo Role (Admin/Thủ kho/Kế toán)
 - [x] Đổi mật khẩu, quên mật khẩu
 
 ### 3.2 Quản Lý Sản Phẩm
@@ -84,11 +84,11 @@
 
 ### 5.2 Bảo Mật
 - Tất cả API calls phải có Bearer token
-- Firestore Security Rules: chỉ cho phép đọc/ghi theo role
+- RTDB Security Rules: chỉ cho phép đọc/ghi theo role
 - Không lưu plaintext credentials
 
 ### 5.3 Khả Năng Mở Rộng
-- Firestore structure hỗ trợ multi-tenant (nhiều công ty)
+- Realtime DB structure hỗ trợ multi-tenant (nhiều công ty)
 - Repository pattern: dễ swap Firebase → SQL nếu cần
 
 ---
@@ -113,5 +113,5 @@
 | Barcode Scan | Scan QR/barcode → tìm sản phẩm đúng |
 | Stock In | Tạo phiếu nhập → cập nhật tồn kho realtime |
 | Stock Out | Tạo phiếu xuất → trừ tồn kho, cảnh báo nếu không đủ |
-| Dashboard | Hiển thị đúng KPIs từ Firestore |
+| Dashboard | Hiển thị đúng KPIs từ Realtime Database |
 | Offline | App hiển thị cached data khi mất mạng |

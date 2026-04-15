@@ -156,7 +156,7 @@ class AddEditProductViewModel @Inject constructor(
                 description = state.description.trim().ifBlank { null },
                 costPrice = state.costPrice.toDoubleOrNull() ?: 0.0,
                 salePrice = state.salePrice.toDoubleOrNull() ?: 0.0,
-                minStock = state.minStock.toIntOrNull() ?: 0,
+                minStock = state.minStock.toDoubleOrNull() ?: 0.0,
                 warehouseId = state.warehouseId,
                 imageUrl = state.imageUrl
             )

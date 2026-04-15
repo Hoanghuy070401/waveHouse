@@ -24,7 +24,7 @@ data class PosUiState(
     val error: String? = null
 ) {
     val cartTotal: Double get() = cartItems.sumOf { it.lineTotal }
-    val cartCount: Int get() = cartItems.sumOf { it.quantity }
+    val cartCount: Int get() = cartItems.sumOf { it.quantity }.toInt()
     val isCartEmpty: Boolean get() = cartItems.isEmpty()
 }
 
@@ -51,7 +51,7 @@ class PosViewModel @Inject constructor(
             productRepository.getProducts(currentUser!!.warehouseId).collectLatest { result ->
                 when (result) {
                     is ApiResult.Success -> {
-                        _allProducts.value = result.data.filter { it.currentStock > 0 }
+                        _allProducts.value = result.data.filter { it.currentStock > 0.0 }
                         filterProducts(_uiState.value.searchQuery)
                         _uiState.update { it.copy(isLoading = false) }
                     }
@@ -90,12 +90,12 @@ class PosViewModel @Inject constructor(
             val maxQty = product.currentStock
 
             val newCart = if (existing != null) {
-                if (existing.quantity >= maxQty) return@update state // Không vượt tồn kho
+                if (existing.quantity >= maxQty) return@update state
                 state.cartItems.map {
-                    if (it.product.id == product.id) it.copy(quantity = it.quantity + 1) else it
+                    if (it.product.id == product.id) it.copy(quantity = it.quantity + 1.0) else it
                 }
             } else {
-                state.cartItems + CartItem(product, 1)
+                state.cartItems + CartItem(product, 1.0)
             }
             state.copy(cartItems = newCart, error = null)
         }
@@ -106,7 +106,7 @@ class PosViewModel @Inject constructor(
             val item = state.cartItems.find { it.product.id == productId } ?: return@update state
             if (item.quantity >= item.product.currentStock) return@update state
             state.copy(cartItems = state.cartItems.map {
-                if (it.product.id == productId) it.copy(quantity = it.quantity + 1) else it
+                if (it.product.id == productId) it.copy(quantity = it.quantity + 1.0) else it
             })
         }
     }
@@ -114,12 +114,12 @@ class PosViewModel @Inject constructor(
     fun decreaseQuantity(productId: String) {
         _uiState.update { state ->
             val item = state.cartItems.find { it.product.id == productId } ?: return@update state
-            if (item.quantity <= 1) {
+            if (item.quantity <= 1.0) {
                 // Remove from cart
                 state.copy(cartItems = state.cartItems.filter { it.product.id != productId })
             } else {
                 state.copy(cartItems = state.cartItems.map {
-                    if (it.product.id == productId) it.copy(quantity = it.quantity - 1) else it
+                    if (it.product.id == productId) it.copy(quantity = it.quantity - 1.0) else it
                 })
             }
         }
