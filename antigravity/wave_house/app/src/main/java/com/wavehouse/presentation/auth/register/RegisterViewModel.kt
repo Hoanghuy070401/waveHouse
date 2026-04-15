@@ -12,10 +12,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class RegisterUiState(
+    val isOwner: Boolean = true,
+    val warehouseCode: String = "",
     val name: String = "",
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
+    val warehouseCodeError: String? = null,
     val nameError: String? = null,
     val emailError: String? = null,
     val passwordError: String? = null,
@@ -37,6 +40,19 @@ class RegisterViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState = _uiState.asStateFlow()
+
+    fun onToggleOwner(isOwner: Boolean) = _uiState.update {
+        it.copy(isOwner = isOwner, warehouseCode = "", warehouseCodeError = null)
+    }
+
+    fun onWarehouseCodeChange(value: String) = _uiState.update {
+        it.copy(
+            warehouseCode = value,
+            warehouseCodeError = if (value.isBlank()) {
+                if (it.isOwner) "Vui lòng nhập Tên kho" else "Vui lòng nhập Mã kho"
+            } else null
+        )
+    }
 
     fun onNameChange(value: String) = _uiState.update {
         it.copy(name = value, nameError = if (value.isBlank()) "Họ và tên không được để trống" else null)
@@ -65,15 +81,21 @@ class RegisterViewModel @Inject constructor(
 
     fun register() {
         val s = _uiState.value
+        val whErr = if (s.warehouseCode.isBlank()) {
+            if (s.isOwner) "Vui lòng nhập Tên kho" else "Vui lòng nhập Mã kho"
+        } else null
         val nameErr = if (s.name.isBlank()) "Họ và tên không được để trống" else null
         val emailErr = validateEmail(s.email)
         val passErr = validatePassword(s.password)
         val confirmErr = if (s.confirmPassword != s.password) "Mật khẩu không khớp" else null
 
-        if (nameErr != null || emailErr != null || passErr != null || confirmErr != null) {
+        if (whErr != null || nameErr != null || emailErr != null || passErr != null || confirmErr != null) {
             _uiState.update {
-                it.copy(nameError = nameErr, emailError = emailErr,
-                    passwordError = passErr, confirmPasswordError = confirmErr)
+                it.copy(
+                    warehouseCodeError = whErr,
+                    nameError = nameErr, emailError = emailErr,
+                    passwordError = passErr, confirmPasswordError = confirmErr
+                )
             }
             return
         }
@@ -84,7 +106,7 @@ class RegisterViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            when (val result = authRepository.register(s.name.trim(), s.email.trim(), s.password)) {
+            when (val result = authRepository.register(s.name.trim(), s.email.trim(), s.password, s.isOwner, s.warehouseCode.trim())) {
                 is ApiResult.Success -> {
                     // Send email verification immediately after register
                     authRepository.sendEmailVerification()

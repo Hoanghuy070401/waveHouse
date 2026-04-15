@@ -21,6 +21,7 @@ sealed class Routes(val route: String) {
     data object EmailVerification : Routes("email_verification?email={email}") {
         fun createRoute(email: String) = "email_verification?email=${android.net.Uri.encode(email)}"
     }
+    data object PendingApproval : Routes("pending_approval")  // Nhân viên chờ Admin duyệt
 
     // ── Main tabs (5 tabs theo PRD) ─────────────────────────────
     data object Dashboard : Routes("dashboard")          // 🏠 Trang chủ

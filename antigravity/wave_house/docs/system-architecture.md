@@ -115,7 +115,9 @@ Root NavHost
 ├── Auth Graph
 │   ├── LoginScreen
 │   ├── RegisterScreen (Admin only)
-│   └── ForgotPasswordScreen
+│   ├── ForgotPasswordScreen
+│   ├── EmailVerificationScreen
+│   └── NewPasswordScreen (via Deep Link)
 │
 └── Main Graph (Bottom Nav)
     ├── DashboardScreen           [Tab 1]

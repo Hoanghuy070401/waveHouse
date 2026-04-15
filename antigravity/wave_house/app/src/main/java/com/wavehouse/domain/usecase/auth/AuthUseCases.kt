@@ -54,3 +54,28 @@ class ConfirmPasswordResetUseCase @Inject constructor(
         return authRepository.confirmPasswordReset(oobCode, newPassword)
     }
 }
+
+/** Observe thay đổi profile user theo thời gian thực (phát hiện cấp quyền ngay lập tức) */
+class ObserveCurrentUserUseCase @Inject constructor(
+    private val authRepository: AuthRepository
+) {
+    operator fun invoke(): Flow<User?> = authRepository.observeCurrentUser()
+}
+
+/** Admin cấp / thay đổi role của nhân viên */
+class UpdateUserRoleUseCase @Inject constructor(
+    private val authRepository: AuthRepository
+) {
+    suspend operator fun invoke(targetUserId: String, newRole: com.wavehouse.domain.model.UserRole): ApiResult<Unit> {
+        if (targetUserId.isBlank()) return ApiResult.Error("UserId không hợp lệ")
+        return authRepository.updateUserRole(targetUserId, newRole)
+    }
+}
+
+/** Lấy danh sách toàn bộ nhân viên trong hệ thống (Admin only) */
+class GetAllUsersUseCase @Inject constructor(
+    private val authRepository: AuthRepository
+) {
+    suspend operator fun invoke(): ApiResult<List<User>> = authRepository.getAllUsers()
+}
+

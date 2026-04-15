@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.wavehouse.core.network.ApiResult
 import com.wavehouse.domain.model.DashboardStats
 import com.wavehouse.domain.model.StockEntry
+import com.wavehouse.domain.model.UserRole
 import com.wavehouse.domain.usecase.auth.GetCurrentUserUseCase
 import com.wavehouse.domain.usecase.stock.GetDashboardStatsUseCase
 import com.wavehouse.domain.usecase.stock.GetStockHistoryUseCase
@@ -14,11 +15,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 data class DashboardUiState(
     val userName: String = "",
+    val warehouseName: String = "",
     val warehouseId: String = "",
+    val userRole: UserRole = UserRole.STAFF,
     val stats: DashboardStats = DashboardStats(),
     val recentEntries: List<StockEntry> = emptyList(),
     val isLoading: Boolean = true,
@@ -46,9 +50,30 @@ class DashboardViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, error = "Chưa đăng nhập") }
                 return@launch
             }
-            _uiState.update { it.copy(userName = user.name, warehouseId = user.warehouseId) }
+            _uiState.update {
+                it.copy(
+                    userName = user.name,
+                    warehouseId = user.warehouseId,
+                    userRole = user.role
+                )
+            }
+            // Load tên kho
+            loadWarehouseName(user.warehouseId)
             loadStats(user.warehouseId)
             loadRecentHistory(user.warehouseId)
+        }
+    }
+
+    private fun loadWarehouseName(warehouseId: String) {
+        if (warehouseId.isBlank()) return
+        viewModelScope.launch {
+            try {
+                val snapshot = com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("warehouses").child(warehouseId).child("name")
+                    .get().await()
+                val name = snapshot.getValue(String::class.java) ?: ""
+                _uiState.update { it.copy(warehouseName = name) }
+            } catch (_: Exception) { }
         }
     }
 

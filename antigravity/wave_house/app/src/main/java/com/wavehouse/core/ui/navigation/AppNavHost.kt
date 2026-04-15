@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -21,8 +22,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.wavehouse.domain.model.UserRole
+import com.wavehouse.presentation.AppViewModel
 import com.wavehouse.presentation.auth.login.LoginScreen
 import com.wavehouse.presentation.auth.register.RegisterScreen
+import com.wavehouse.presentation.auth.splash.PendingApprovalScreen
 import com.wavehouse.presentation.auth.splash.SplashScreen
 import com.wavehouse.presentation.auth.emailverification.EmailVerificationScreen
 import com.wavehouse.presentation.auth.forgotpassword.ForgotPasswordScreen
@@ -37,6 +40,7 @@ import com.wavehouse.presentation.product.scanner.BarcodeScanScreen
 import com.wavehouse.presentation.pos.PosScreen
 import com.wavehouse.presentation.report.ReportScreen
 import com.wavehouse.presentation.settings.SettingsScreen
+import com.wavehouse.presentation.staff.ManageStaffScreen
 import com.wavehouse.presentation.stock.history.StockHistoryScreen
 import com.wavehouse.presentation.stock.lowstock.LowStockAlertScreen
 import com.wavehouse.presentation.stock.overview.StockOverviewScreen
@@ -88,6 +92,7 @@ private val routesWithoutBottomBar = setOf(
     Routes.Login.route,
     Routes.Register.route,
     Routes.EmailVerification.route,
+    Routes.PendingApproval.route,
     Routes.ForgotPassword.route,
     Routes.ForgotPasswordSuccess.route,
     Routes.ProductDetail.route,
@@ -109,11 +114,14 @@ private val routesWithoutBottomBar = setOf(
 
 @Composable
 fun AppNavHost(
-    currentUserRole: UserRole = UserRole.ADMIN
+    appViewModel: AppViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // Lấy role realtime từ AppViewModel (cập nhật ngay khi Admin thay đổi quyền)
+    val currentUserRole by appViewModel.currentUserRole.collectAsState()
 
     val showBottomBar = routesWithoutBottomBar.none { pattern ->
         currentRoute?.startsWith(pattern.substringBefore("{")) == true
@@ -158,6 +166,11 @@ fun AppNavHost(
                     },
                     onNavigateToEmailVerification = { email ->
                         navController.navigate(Routes.EmailVerification.createRoute(email)) {
+                            popUpTo(Routes.Splash.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToPendingApproval = {
+                        navController.navigate(Routes.PendingApproval.route) {
                             popUpTo(Routes.Splash.route) { inclusive = true }
                         }
                     }
@@ -227,6 +240,22 @@ fun AppNavHost(
                         }
                     },
                     onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            // ── Pending Approval ─────────────────────────────────────────────
+            composable(route = Routes.PendingApproval.route) {
+                PendingApprovalScreen(
+                    onLogout = {
+                        navController.navigate(Routes.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onApproved = {
+                        navController.navigate(Routes.Dashboard.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
 
@@ -311,12 +340,15 @@ fun AppNavHost(
 
             // ── Inventory (Kho hàng) ───────────────────────────────────────
             composable(route = Routes.ProductList.route) {
+                val canEditProduct = currentUserRole == UserRole.ADMIN || currentUserRole == UserRole.WAREHOUSE
                 ProductListScreen(
                     onNavigateToDetail = { navController.navigate(Routes.ProductDetail.createRoute(it)) },
                     onNavigateToAdd = { navController.navigate(Routes.AddProduct.route) },
-                    onNavigateToScanner = { navController.navigate(Routes.BarcodeScanner.route) }
+                    onNavigateToScanner = { navController.navigate(Routes.BarcodeScanner.route) },
+                    canAddProduct = canEditProduct
                 )
             }
+
 
             composable(
                 route = Routes.ProductDetail.route,
@@ -453,6 +485,24 @@ fun AppNavHost(
 
             composable(route = Routes.Settings.route) {
                 SettingsScreen(navController = navController)
+            }
+
+            // ── Manage Staff (Admin only) ───────────────────────────────────
+            composable(
+                route = Routes.ManageStaff.route,
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
+            ) {
+                // Guard: chặn nếu không phải ADMIN
+                if (currentUserRole != UserRole.ADMIN) {
+                    LaunchedEffect(Unit) {
+                        navController.popBackStack()
+                    }
+                } else {
+                    ManageStaffScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }

@@ -168,13 +168,87 @@ fun RegisterScreen(
                         .fillMaxWidth()
                         .padding(28.dp)
                 ) {
+                    // ── Loại Tài Khoản Divider ──────────────────────
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "LOẠI TÀI KHOẢN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 2.sp),
+                            fontWeight = FontWeight.Bold,
+                            color = AccentGreen
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.1f))
+                    }
+
+                    // Toggles
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(alpha = 0.05f))
+                            .padding(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (uiState.isOwner) AccentGreen else Color.Transparent)
+                                .clickable { viewModel.onToggleOwner(true) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Chủ cửa hàng",
+                                color = if (uiState.isOwner) Color.White else Color.White.copy(alpha = 0.6f),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (uiState.isOwner) FontWeight.Bold else FontWeight.Medium
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (!uiState.isOwner) Color.White.copy(alpha = 0.2f) else Color.Transparent)
+                                .clickable { viewModel.onToggleOwner(false) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Nhân viên",
+                                color = if (!uiState.isOwner) Color.White else Color.White.copy(alpha = 0.6f),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (!uiState.isOwner) FontWeight.Bold else FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    DarkLabel(if (uiState.isOwner) "Tên cửa hàng" else "Mã kết nối cửa hàng")
+                    DarkField(
+                        value = uiState.warehouseCode,
+                        onValueChange = viewModel::onWarehouseCodeChange,
+                        placeholder = if (uiState.isOwner) "VD: Cửa hàng FreshStock" else "Nhập mã do Admin cấp",
+                        leadingIcon = Icons.Filled.Store,
+                        isError = uiState.warehouseCodeError != null,
+                        errorText = uiState.warehouseCodeError,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                        enabled = !uiState.isLoading
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
                     // ── Thông tin cá nhân Divider ──────────────────
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Thông tin cá nhân".uppercase(),
+                            text = "THÔNG TIN CÁ NHÂN",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 2.sp),
                             fontWeight = FontWeight.Bold,
                             color = AccentGreen

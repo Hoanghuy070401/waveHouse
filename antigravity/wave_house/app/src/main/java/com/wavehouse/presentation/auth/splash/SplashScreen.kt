@@ -24,6 +24,7 @@ fun SplashScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToDashboard: () -> Unit,
     onNavigateToEmailVerification: (String) -> Unit = {},
+    onNavigateToPendingApproval: () -> Unit = {},
     viewModel: SplashViewModel = hiltViewModel()
 ) {
     val destination by viewModel.destination.collectAsState()
@@ -44,6 +45,7 @@ fun SplashScreen(
             is SplashDestination.Unauthenticated -> onNavigateToLogin()
             is SplashDestination.EmailVerificationRequired ->
                 onNavigateToEmailVerification(dest.email)
+            is SplashDestination.PendingApproval -> onNavigateToPendingApproval()
             else -> {}
         }
     }

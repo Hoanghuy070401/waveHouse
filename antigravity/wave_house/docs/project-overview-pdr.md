@@ -28,9 +28,9 @@
 ## 3. Tính Năng Cốt Lõi (MVP)
 
 ### 3.1 Xác Thực & Phân Quyền
-- [ ] Đăng nhập Email/Password (Firebase Auth)
+- [x] Đăng nhập Email/Password (Firebase Auth)
 - [ ] Phân quyền theo Role (Admin/Thủ kho/Kế toán)
-- [ ] Đổi mật khẩu, quên mật khẩu
+- [x] Đổi mật khẩu, quên mật khẩu
 
 ### 3.2 Quản Lý Sản Phẩm
 - [ ] Danh sách sản phẩm (phân trang, tìm kiếm, lọc)

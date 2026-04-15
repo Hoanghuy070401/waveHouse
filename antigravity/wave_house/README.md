@@ -78,6 +78,8 @@ app/src/main/java/com/wavehouse/
 | System Architecture | [docs/system-architecture.md](docs/system-architecture.md) |
 | Product Requirements | [docs/project-overview-pdr.md](docs/project-overview-pdr.md) |
 | Code Standards | [docs/code-standards.md](docs/code-standards.md) |
+| Codebase Summary | [docs/codebase-summary.md](docs/codebase-summary.md) |
+| Project Roadmap | [docs/project-roadmap.md](docs/project-roadmap.md) |
 | Implementation Plan | [plans/2026-04-13-wavehouse/plan.md](plans/2026-04-13-wavehouse/plan.md) |
 
 ---

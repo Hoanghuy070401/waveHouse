@@ -7,6 +7,7 @@ import com.wavehouse.core.network.ApiResult
 import com.wavehouse.domain.model.Category
 import com.wavehouse.domain.model.Product
 import com.wavehouse.domain.model.UnitOfMeasure
+import com.wavehouse.domain.model.UserRole
 import com.wavehouse.domain.usecase.auth.GetCurrentUserUseCase
 import com.wavehouse.domain.usecase.product.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,7 +44,10 @@ data class AddEditProductUiState(
     val isEditMode: Boolean = false,
     val saveSuccess: Boolean = false,
     val errorMessage: String? = null,
-    val warehouseId: String = ""
+    val warehouseId: String = "",
+
+    // Phân quyền: chỉ ADMIN và WAREHOUSE mới được thêm/sửa sản phẩm
+    val isAccessDenied: Boolean = false
 )
 
 @HiltViewModel
@@ -67,6 +71,12 @@ class AddEditProductViewModel @Inject constructor(
     private fun loadUserAndInit() {
         viewModelScope.launch {
             val user = getCurrentUserUseCase() ?: return@launch
+            // Chỉ ADMIN và WAREHOUSE mới được thêm/sửa sản phẩm
+            val hasAccess = user.role == UserRole.ADMIN || user.role == UserRole.WAREHOUSE
+            if (!hasAccess) {
+                _uiState.update { it.copy(isAccessDenied = true) }
+                return@launch
+            }
             _uiState.update { it.copy(warehouseId = user.warehouseId) }
             if (editProductId != null) loadProductForEdit(editProductId)
         }

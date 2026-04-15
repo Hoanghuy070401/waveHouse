@@ -2,6 +2,7 @@ package com.wavehouse.presentation.auth.splash
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wavehouse.domain.model.UserStatus
 import com.wavehouse.domain.repository.AuthRepository
 import com.wavehouse.domain.usecase.auth.ObserveAuthStateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ sealed interface SplashDestination {
     data object Loading : SplashDestination
     data object Unauthenticated : SplashDestination
     data class EmailVerificationRequired(val email: String) : SplashDestination
+    data object PendingApproval : SplashDestination   // Nhân viên chờ Admin duyệt
     data object Dashboard : SplashDestination
 }
 
@@ -54,11 +56,16 @@ class SplashViewModel @Inject constructor(
                 return@launch
             }
             val verified = authRepository.reloadAndCheckVerified()
-            if (verified) {
-                _destination.update { SplashDestination.Dashboard }
-            } else {
+            if (!verified) {
                 _destination.update { SplashDestination.EmailVerificationRequired(user.email) }
+                return@launch
             }
+            // Kiểm tra trạng thái phê duyệt của nhân viên
+            if (user.status == UserStatus.PENDING) {
+                _destination.update { SplashDestination.PendingApproval }
+                return@launch
+            }
+            _destination.update { SplashDestination.Dashboard }
         }
     }
 }

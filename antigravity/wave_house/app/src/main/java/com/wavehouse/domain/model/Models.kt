@@ -8,6 +8,12 @@ enum class UserRole {
     STAFF        // Nhân viên: chỉ bán hàng + xem kho cơ bản
 }
 
+/** Trạng thái tài khoản nhân viên */
+enum class UserStatus {
+    ACTIVE,   // Đã được Admin duyệt
+    PENDING   // Đang chờ Admin duyệt (nhân viên mới đăng ký)
+}
+
 /** Domain model: User */
 data class User(
     val id: String,
@@ -15,6 +21,7 @@ data class User(
     val email: String,
     val role: UserRole,
     val warehouseId: String,
+    val status: UserStatus = UserStatus.ACTIVE,
     val avatarUrl: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 ) {
@@ -214,6 +221,7 @@ data class OrderItem(
 data class Warehouse(
     val id: String,
     val name: String,
+    val joinCode: String = "",     // Mã 6 ký tự để nhân viên tham gia (VD: ABC123)
     val address: String? = null,
     val managerId: String,
     val status: WarehouseStatus = WarehouseStatus.ACTIVE,
