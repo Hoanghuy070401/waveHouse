@@ -1,0 +1,49 @@
+{
+    "rules": {
+        "users": {
+            ".read": "auth != null",
+            "$userId": {
+                ".read": "auth != null",
+                ".write": "auth != null && (auth.uid === $userId || root.child('users').child(auth.uid).child('role').val() === 'ADMIN')",
+                "role": {
+                    ".write": "root.child('users').child(auth.uid).child('role').val() === 'ADMIN'"
+                }
+            }
+        },
+        "warehouses": {
+            ".read": "auth != null",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'ADMIN'",
+            ".indexOn": [
+                "joinCode"
+            ]
+        },
+        "products": {
+            ".read": "auth != null",
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'WAREHOUSE')"
+        },
+        "stock_entries": {
+            ".read": "auth != null",
+            "$entryId": {
+                ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'WAREHOUSE')"
+            }
+        },
+        "orders": {
+            ".read": "auth != null",
+            "$orderId": {
+                ".write": "auth != null"
+            }
+        },
+        "suppliers": {
+            ".read": "auth != null",
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'WAREHOUSE')"
+        },
+        "categories": {
+            ".read": "auth != null",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'ADMIN'"
+        },
+        "units": {
+            ".read": "auth != null",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'ADMIN'"
+        }
+    }
+}

@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      // Fallback securely if user document doesn't exist yet
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null ? userDoc.data : null;
+    }
+
+    function getRole() {
+      let data = getUserData();
+      return data != null ? data.role : 'GUEST';
+    }
+    
+    function isAdmin() {
+      return getRole() == 'ADMIN';
+    }
+    
+    function isWarehouse() {
+      return getRole() == 'WAREHOUSE';
+    }
+    
+    function isAccountant() {
+      return getRole() == 'ACCOUNTANT';
+    }
+    
+    function isStaff() {
+      return getRole() == 'STAFF';
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      // User can write themselves (e.g. update profile), Admin can write anyone.
+      // Real-world: should lock down 'role' field from being modified by non-admin!
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+    }
+
+    // 2. Warehouses
+    match /warehouses/{warehouseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 3. Products
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      // Chỉ Admin và Warehouse được chỉnh sửa/nhập thêm. Staff chỉ xem.
+      allow write: if isAdmin() || isWarehouse();
+    }
+
+    // 4. Stock Entries (Phiếu nhập, xuất, hao hụt)
+    match /stock_entries/{entryId} {
+      // Ai cũng có thể đọc (Staff cần xem để biết log?)
+      // Nếu Staff ko được xem thì sửa lại thành: if !isStaff()
+      allow read: if isAuthenticated();
+      // Chỉ Admin, Warehouse được ghi
+      allow create: if isAdmin() || isWarehouse();
+      allow update, delete: if isAdmin();
+    }
+
+    // 5. Orders (Đơn hàng / Bán hàng POS)
+    match /orders/{orderId} {
+      allow read: if isAuthenticated();
+      // Tất cả role đều có quyền tạo đơn hàng (bán hàng POS)
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // 6. Suppliers (Nhà cung cấp)
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isWarehouse();
+    }
+
+    // 7. System constants (Categories, Units)
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /units/{unitId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

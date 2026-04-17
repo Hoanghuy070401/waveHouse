@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Digital Orchard - Thêm hàng hoá</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#00210c",
+                        "surface-container-high": "#e3eae0",
+                        "outline": "#6d7a6e",
+                        "on-surface": "#171d17",
+                        "surface": "#f4fbf1",
+                        "secondary-fixed": "#d1e4fb",
+                        "tertiary-fixed-dim": "#ffb961",
+                        "surface-bright": "#f4fbf1",
+                        "primary-fixed": "#7efba4",
+                        "error": "#ba1a1a",
+                        "secondary": "#4e6073",
+                        "on-secondary-container": "#526478",
+                        "surface-variant": "#dde5db",
+                        "on-primary-container": "#00391a",
+                        "inverse-surface": "#2b322c",
+                        "on-surface-variant": "#3d4a3f",
+                        "on-background": "#171d17",
+                        "tertiary": "#865300",
+                        "background": "#f4fbf1",
+                        "on-tertiary-container": "#472a00",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#006d37",
+                        "inverse-on-surface": "#ecf3e9",
+                        "surface-dim": "#d5dcd2",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#dde5db",
+                        "primary-container": "#27ae60",
+                        "on-tertiary-fixed": "#2b1700",
+                        "tertiary-container": "#d58700",
+                        "outline-variant": "#bccabc",
+                        "secondary-fixed-dim": "#b5c8df",
+                        "secondary-container": "#cfe2f9",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#36485b",
+                        "on-primary-fixed-variant": "#005228",
+                        "inverse-primary": "#61de8a",
+                        "primary-fixed-dim": "#61de8a",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#e9f0e6",
+                        "primary": "#006d37",
+                        "tertiary-fixed": "#ffddb9",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#091d2e",
+                        "surface-container-low": "#eff6ec",
+                        "on-tertiary-fixed-variant": "#663e00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Work Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4fbf1; }
+        h1, h2, h3 { font-family: 'Work Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-gradient-btn {
+            background: linear-gradient(135deg, #006d37 0%, #27ae60 100%);
+        }
+        .custom-gradient-btn:active {
+            filter: brightness(0.9);
+        }
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface min-h-screen pb-32">
+<!-- TopAppBar: Thêm hàng mới -->
+<nav class="bg-[#eff6ec] dark:bg-stone-900 sticky top-0 z-50 flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:bg-[#dde5db] transition-colors p-2 rounded-full scale-95 active:opacity-80">
+<span class="material-symbols-outlined text-[#006d37]">arrow_back</span>
+</button>
+<h1 class="text-2xl font-bold text-[#006d37] dark:text-emerald-500">Thêm hàng mới</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close up portrait of a smiling male warehouse manager wearing a green uniform against a blurred industrial background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHsYaToOPicscLojJ5DGzaFyr1lxaOeXw1TaAyOwDzDvc_tAe5zgNt4nvfULn_5MghqyPbaRYCTD7YwiF6FEmnCTSX0brPWuXv8b5gje_Z258SIpOzlo7XyT0vW-uBG-HcaZ1RyIqKmNCsbAoOWxKyktzFEpmMNXk9Fapu0Q2o7v7boOlaSfBrtH-7Y5Hyb7JE_y82poLeus2eddnBKQhmsRbOvWEv0o4HqiPV7xZ7Rf70VMBbDPkXInoP418B1PrvH0l-Te8PAHI"/>
+</div>
+</nav>
+<main class="max-w-xl mx-auto px-6 pt-8 space-y-10">
+<!-- Hero Section with Visual Hint -->
+<section class="relative h-48 rounded-3xl overflow-hidden group">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Assorted fresh green vegetables including broccoli, kale, and cucumbers arranged artistically on a light surface with natural sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbXkxcOKdQzVz1Rm_KmWiIjrAXVMGfSqqiUhOVxcyxwobPDEqd4Oog4PKSVQTJ3dyGRDkv5ixoBdWUfnjeVninerLhy554Km4ooM5NCjJL1bjl_qphOrITjMTD1Lzu7xz5Plw6YZsUWLN34-UZ2C4qxwiIXC0Cs7hT5m1cgWDR2NF6lFO2IjOV9O-J1M0xuYxQcmkymP8X3h4Xh6KcxOlfWgXD5gfT2NT45vnpnHeAgdTheTaHniDoqm1sYY8VM-Uvj0C5eOR3WXs"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-primary-container/60 to-transparent flex items-end p-6">
+<div class="text-white">
+<p class="text-sm font-medium opacity-80">Danh mục nông sản</p>
+<h2 class="text-2xl font-bold">Lô hàng mới</h2>
+</div>
+</div>
+</section>
+<!-- Form Section -->
+<form class="space-y-8">
+<!-- Basic Info Card -->
+<div class="bg-surface-container-low p-1 rounded-3xl">
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm space-y-6">
+<div class="space-y-2">
+<label class="text-sm font-semibold text-on-surface-variant px-1">Tên sản phẩm</label>
+<input class="w-full bg-surface-container px-5 py-4 rounded-xl border-none focus:ring-2 focus:ring-primary text-on-surface placeholder:text-outline-variant font-medium" placeholder="Ví dụ: Cải bẹ xanh, Táo Rockit..." type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-semibold text-on-surface-variant px-1">Đơn vị</label>
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+<button class="px-6 py-3 rounded-full bg-primary text-white font-medium whitespace-nowrap" type="button">kg</button>
+<button class="px-6 py-3 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-variant font-medium transition-colors whitespace-nowrap" type="button">bó</button>
+<button class="px-6 py-3 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-variant font-medium transition-colors whitespace-nowrap" type="button">thùng</button>
+<button class="px-6 py-3 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-variant font-medium transition-colors whitespace-nowrap" type="button">túi</button>
+<button class="px-2 py-3 rounded-full bg-surface-container text-on-surface-variant aspect-square flex items-center justify-center" type="button">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Dynamic Pricing Section -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 px-1">
+<span class="text-xl">💰</span>
+<h3 class="text-xl font-bold text-on-surface">Giá hôm nay</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-6 rounded-2xl space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Giá nhập hôm nay</label>
+<div class="flex items-center gap-2">
+<input class="w-full bg-transparent text-3xl font-bold border-none focus:ring-0 p-0 text-primary [appearance:textfield] [&amp;::-webkit-outer-spin-button]:appearance-none [&amp;::-webkit-inner-spin-button]:appearance-none" placeholder="0" type="number"/>
+<span class="text-outline font-semibold">đ</span>
+</div>
+<p class="text-[10px] text-outline">Gợi ý: 15.000đ/kg</p>
+</div>
+<div class="bg-tertiary-fixed p-6 rounded-2xl space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-tertiary-fixed-variant">Giá bán hôm nay</label>
+<div class="flex items-center gap-2">
+<input class="w-full bg-transparent text-3xl font-bold border-none focus:ring-0 p-0 text-tertiary [appearance:textfield] [&amp;::-webkit-outer-spin-button]:appearance-none [&amp;::-webkit-inner-spin-button]:appearance-none" placeholder="0" type="number"/>
+<span class="text-on-tertiary-fixed-variant font-semibold">đ</span>
+</div>
+<div class="flex justify-between items-center">
+<p class="text-[10px] text-on-tertiary-fixed-variant">Lợi nhuận mục tiêu: 20%</p>
+<span class="material-symbols-outlined text-sm text-tertiary">trending_up</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Options Section -->
+<div class="flex items-center justify-between p-6 bg-surface-container-high rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="relative flex items-center">
+<input checked="" class="w-6 h-6 rounded-md border-outline text-primary focus:ring-primary cursor-pointer" id="history" type="checkbox"/>
+</div>
+<label class="font-semibold text-on-surface select-none cursor-pointer" for="history">Lưu vào lịch sử giá</label>
+</div>
+<span class="material-symbols-outlined text-outline">history</span>
+</div>
+<!-- Primary CTA -->
+<div class="pt-4">
+<button class="w-full custom-gradient-btn text-white py-5 rounded-full font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-[0.98]" type="submit">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                    Thêm sản phẩm
+                </button>
+</div>
+</form>
+</main>
+<!-- BottomNavBar: Analytics Active -->
+<div class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-6 bg-[#ffffffcc] dark:bg-stone-900/80 backdrop-blur-xl z-50 rounded-t-3xl shadow-[0_-8px_32px_0_rgba(23,29,23,0.06)]">
+<button class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:bg-[#dde5db] transition-all p-2">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-medium mt-1">Overview</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:bg-[#dde5db] transition-all p-2">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-[10px] font-medium mt-1">Stock</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-[#27AE60] text-white rounded-2xl px-4 py-1 scale-110 duration-300 ease-out">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="text-[10px] font-medium mt-1">Sales</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:bg-[#dde5db] transition-all p-2">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-medium mt-1">Analytics</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#171d17] dark:text-stone-400 opacity-70 hover:bg-[#dde5db] transition-all p-2">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium mt-1">Profile</span>
+</button>
+</div>
+</body></html>
