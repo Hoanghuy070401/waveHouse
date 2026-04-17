@@ -1,0 +1,27 @@
+# Cập nhật Kiến trúc Giá: FreshStock (Dynamic Pricing)
+
+## 1. Nguyên tắc cốt lõi
+- Giá không cố định: Giá = Dữ liệu biến động theo thời gian.
+- Không sửa giá cũ: Luôn tạo bản ghi mới (Price Record) để lưu lịch sử.
+- Đóng băng giá (Snapshot): Giá tại thời điểm bán hàng được lưu vào Order, không đổi nếu giá gốc thay đổi sau đó.
+
+## 2. Các màn hình cần thiết
+
+### A. Màn hình Chi tiết sản phẩm
+- Hiển thị: Tên SP, Tồn kho.
+- Section "Giá hôm nay": Giá nhập, Giá bán hiện tại.
+- CTA: [✏️ Cập nhật giá]
+- Section "Lịch sử giá": Danh sách (Ngày, Giá nhập, Giá bán) dạng list.
+
+### B. Màn hình Cập nhật giá
+- Hiển thị giá hiện tại để tham khảo.
+- Form nhập: Giá nhập mới, Giá bán mới.
+- Nút [Lưu] để tạo bản ghi lịch sử mới.
+
+### C. Màn hình Thêm sản phẩm (Cập nhật)
+- Thêm checkbox/logic: "Lưu vào lịch sử giá" (mặc định bật).
+- Đảm bảo tạo Price Record đầu tiên ngay khi tạo SP.
+
+## 3. Cấu trúc Data (Tham chiếu)
+- products -> currentPrice (Latest)
+- products -> priceHistory (Collection of records)

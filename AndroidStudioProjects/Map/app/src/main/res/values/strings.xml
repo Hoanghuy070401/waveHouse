@@ -1,8 +1,0 @@
-<resources>
-    <string name="app_name">MapOts</string>
-    <string name="map_style_light" translatable="false">https://tiles.versatiles.org/assets/styles/colorful.json</string>
-    <string name="map_style_dark" translatable="false">https://tiles.versatiles.org/assets/styles/eclipse.json</string>
-    <string name="valhalla_url">https://valhalla1.openstreetmap.de/route</string>
-    <string name="widget_loading_text">Vui lòng đợi trong giây lát</string>
-    <string name="key_mb">NkJ7pLZ3rA5tXvW2cE0KdQ9oIi4CVY8Ox</string>
-</resources>
