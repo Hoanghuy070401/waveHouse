@@ -1,8 +1,8 @@
 # Design Guidelines: The Organic Ledger
 
 ## Documentation Maintenance
-**Last Updated:** 2026-04-17  
-**Document Version:** 1.0  
+**Last Updated:** 2026-04-20  
+**Document Version:** 1.1  
 **Maintained By:** Development Team
 
 ## 1. Overview & Creative North Star

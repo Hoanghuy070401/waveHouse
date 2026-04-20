@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -110,14 +111,22 @@ fun SettingsScreen(
                 modifier = Modifier.clickable { /* TODO: warehouse switcher */ }
             )
 
-            // Quản lý nhân viên (chỉ Owner/Admin)
-            if (uiState.userRole == "ADMIN" || uiState.userRole == "OWNER") {
+            // Quản lý nhân viên (chỉ Admin)
+            if (uiState.userRole == "ADMIN") {
                 ListItem(
                     headlineContent = { Text("Quản lý nhân viên") },
                     supportingContent = { Text("Mời và phân quyền") },
                     leadingContent = { Icon(Icons.Filled.GroupAdd, contentDescription = null) },
                     trailingContent = { Icon(Icons.Filled.ChevronRight, contentDescription = null) },
                     modifier = Modifier.clickable { navController.navigate(Routes.ManageStaff.route) }
+                )
+
+                ListItem(
+                    headlineContent = { Text("Cấu hình thanh toán QR") },
+                    supportingContent = { Text("Tải ảnh mã QR để khách quét khi thanh toán") },
+                    leadingContent = { Icon(Icons.Filled.QrCode2, contentDescription = null) },
+                    trailingContent = { Icon(Icons.Filled.ChevronRight, contentDescription = null) },
+                    modifier = Modifier.clickable { navController.navigate(Routes.PaymentConfig.route) }
                 )
             }
 

@@ -1,5 +1,7 @@
 package com.wavehouse.presentation.product.addedit
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,9 +10,11 @@ import com.wavehouse.domain.model.Category
 import com.wavehouse.domain.model.Product
 import com.wavehouse.domain.model.UnitOfMeasure
 import com.wavehouse.domain.model.UserRole
+import com.wavehouse.domain.repository.ProductRepository
 import com.wavehouse.domain.usecase.auth.GetCurrentUserUseCase
 import com.wavehouse.domain.usecase.product.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -36,6 +40,9 @@ data class AddEditProductUiState(
     /** Cho phép bán lẻ (số thập phân). false = chỉ bán số nguyên */
     val allowDecimal: Boolean = true,
     val imageUrl: String? = null,
+    /** Uri ảnh mới vừa chọn (chưa upload) — để preview */
+    val pendingImageUri: Uri? = null,
+    val isUploadingImage: Boolean = false,
 
     // Validation errors
     val nameError: String? = null,
@@ -59,12 +66,17 @@ data class AddEditProductUiState(
 
 @HiltViewModel
 class AddEditProductViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val getProductByIdUseCase: GetProductByIdUseCase,
     private val createProductUseCase: CreateProductUseCase,
     private val updateProductUseCase: UpdateProductUseCase,
+    private val productRepository: ProductRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    /** Bytes ảnh đang chờ upload sau khi save (chỉ giữ trong scope VM) */
+    private var pendingImageBytes: ByteArray? = null
 
     private val editProductId: String? = savedStateHandle["productId"]
 
@@ -155,6 +167,27 @@ class AddEditProductViewModel @Inject constructor(
     fun onAllowDecimalChange(v: Boolean) = _uiState.update { it.copy(allowDecimal = v) }
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
 
+    /** Người dùng chọn ảnh mới từ picker — đọc bytes và lưu tạm, chưa upload. */
+    fun onPickImage(uri: Uri) {
+        viewModelScope.launch {
+            val bytes = runCatching {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            }.getOrNull()
+            if (bytes == null || bytes.isEmpty()) {
+                _uiState.update { it.copy(errorMessage = "Không đọc được ảnh đã chọn") }
+                return@launch
+            }
+            pendingImageBytes = bytes
+            _uiState.update { it.copy(pendingImageUri = uri) }
+        }
+    }
+
+    /** Bỏ ảnh (hoặc ảnh đang chọn hoặc xoá ảnh hiện tại sau khi save). */
+    fun onRemoveImage() {
+        pendingImageBytes = null
+        _uiState.update { it.copy(pendingImageUri = null, imageUrl = null) }
+    }
+
     fun save() {
         val state = _uiState.value
         val nameError = if (state.name.isBlank()) "Tên không được để trống" else null
@@ -166,7 +199,7 @@ class AddEditProductViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val product = Product(
+            val baseProduct = Product(
                 id = editProductId ?: "",
                 name = state.name.trim(),
                 sku = state.sku.trim().uppercase(),
@@ -185,15 +218,80 @@ class AddEditProductViewModel @Inject constructor(
                 allowDecimal = state.allowDecimal
             )
 
-            val result = if (state.isEditMode) updateProductUseCase(product)
-                         else createProductUseCase(product)
-
-            when (result) {
-                is ApiResult.Success -> _uiState.update { it.copy(isLoading = false, saveSuccess = true) }
-                is ApiResult.Error -> _uiState.update {
-                    it.copy(isLoading = false, errorMessage = result.message)
+            // Bước 1: create/update (chưa có imageUrl mới) để lấy productId chắc chắn.
+            val productId: String = if (state.isEditMode) {
+                when (val r = updateProductUseCase(baseProduct)) {
+                    is ApiResult.Success -> baseProduct.id
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = r.message) }
+                        return@launch
+                    }
+                    ApiResult.Loading -> return@launch
                 }
-                ApiResult.Loading -> {}
+            } else {
+                when (val r = createProductUseCase(baseProduct)) {
+                    is ApiResult.Success -> r.data
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = r.message) }
+                        return@launch
+                    }
+                    ApiResult.Loading -> return@launch
+                }
+            }
+
+            // Bước 2: nếu có ảnh mới được chọn → upload & cập nhật imageUrl; xoá ảnh cũ (nếu khác file).
+            val bytes = pendingImageBytes
+            if (bytes != null) {
+                _uiState.update { it.copy(isUploadingImage = true) }
+                val previousUrl = baseProduct.imageUrl
+                when (val upload = productRepository.uploadProductImage(productId, bytes)) {
+                    is ApiResult.Success -> {
+                        val newUrl = upload.data
+                        // Update DB với URL mới
+                        val updated = baseProduct.copy(id = productId, imageUrl = newUrl)
+                        when (val saveUrl = updateProductUseCase(updated)) {
+                            is ApiResult.Success -> {
+                                // Ảnh mới giờ ghi đè file cùng đường dẫn nên không cần xoá.
+                                // Chỉ xoá khi URL thực sự khác (ví dụ bị người khác thay đổi đường dẫn).
+                                if (!previousUrl.isNullOrBlank() && previousUrl != newUrl) {
+                                    productRepository.deleteProductImage(previousUrl)
+                                }
+                                pendingImageBytes = null
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        isUploadingImage = false,
+                                        saveSuccess = true,
+                                        imageUrl = newUrl,
+                                        pendingImageUri = null
+                                    )
+                                }
+                            }
+                            is ApiResult.Error -> {
+                                // Rollback ảnh mới nếu ghi DB fail
+                                productRepository.deleteProductImage(newUrl)
+                                _uiState.update {
+                                    it.copy(isLoading = false, isUploadingImage = false, errorMessage = saveUrl.message)
+                                }
+                            }
+                            ApiResult.Loading -> Unit
+                        }
+                    }
+                    is ApiResult.Error -> _uiState.update {
+                        it.copy(isLoading = false, isUploadingImage = false, errorMessage = upload.message)
+                    }
+                    ApiResult.Loading -> Unit
+                }
+            } else {
+                // Không chọn ảnh mới; nếu người dùng bấm "Xoá ảnh" (imageUrl=null nhưng trước đó có)
+                val previousUrl = if (state.isEditMode) {
+                    runCatching { getProductByIdUseCase(productId) }.getOrNull()
+                        ?.let { (it as? ApiResult.Success)?.data?.imageUrl }
+                } else null
+                if (state.isEditMode && !previousUrl.isNullOrBlank() && state.imageUrl == null) {
+                    productRepository.deleteProductImage(previousUrl)
+                }
+                _uiState.update { it.copy(isLoading = false, saveSuccess = true) }
             }
         }
     }

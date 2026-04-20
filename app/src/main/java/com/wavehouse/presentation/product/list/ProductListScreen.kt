@@ -118,6 +118,30 @@ fun ProductListScreen(
                         CircularProgressIndicator()
                     }
                 }
+                uiState.error != null && uiState.products.isEmpty() -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("⚠️", style = MaterialTheme.typography.displayMedium)
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                "Không tải được sản phẩm",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                uiState.error ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            androidx.compose.material3.TextButton(onClick = viewModel::onRefresh) {
+                                Text("Thử lại")
+                            }
+                        }
+                    }
+                }
                 uiState.products.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -254,6 +254,8 @@ data class Warehouse(
     val managerId: String,
     val status: WarehouseStatus = WarehouseStatus.ACTIVE,
     val memberCount: Int = 0,
+    /** URL ảnh mã QR nhận thanh toán do chủ cửa hàng cung cấp */
+    val qrImageUrl: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 

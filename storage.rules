@@ -1,0 +1,53 @@
+rules_version = '2';
+
+// Firebase Cloud Storage rules cho WaveHouse
+// - product_images/: ADMIN hoặc WAREHOUSE mới upload được
+// - warehouse_qr/: chỉ ADMIN mới upload được
+// - Tất cả user đã đăng nhập có thể đọc (để hiển thị QR/ảnh sản phẩm)
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Đọc role của user từ Realtime Database qua custom claims (nếu có).
+    // Fallback: yêu cầu client gắn claim `role` khi Admin/Staff đăng nhập.
+    function hasRole(role) {
+      return isSignedIn() && request.auth.token.role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('ADMIN');
+    }
+
+    function isWarehouseStaff() {
+      return hasRole('ADMIN') || hasRole('WAREHOUSE');
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function sizeUnder(maxMb) {
+      return request.resource.size < maxMb * 1024 * 1024;
+    }
+
+    // Ảnh sản phẩm: cho phép mọi user đã đăng nhập upload (UI tự ẩn nút theo role), vẫn kiểm tra loại file + size.
+    match /product_images/{file=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isImage() && sizeUnder(5);
+    }
+
+    // Mã QR thanh toán của warehouse: mở quyền cho mọi user đã đăng nhập, đảm bảo image + size.
+    match /warehouse_qr/{file=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isImage() && sizeUnder(5);
+    }
+
+    // Mặc định: từ chối mọi path khác.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

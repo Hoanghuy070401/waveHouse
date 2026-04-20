@@ -512,10 +512,6 @@ fun AppNavHost(
                 SettingsScreen(navController = navController)
             }
 
-            composable(route = Routes.Settings.route) {
-                SettingsScreen(navController = navController)
-            }
-
             // ── Manage Staff (Admin only) ───────────────────────────────────
             composable(
                 route = Routes.ManageStaff.route,
@@ -529,6 +525,21 @@ fun AppNavHost(
                     }
                 } else {
                     ManageStaffScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            // ── Payment Config / QR setup (Admin only) ──────────────────────
+            composable(
+                route = Routes.PaymentConfig.route,
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
+            ) {
+                if (currentUserRole != UserRole.ADMIN) {
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                } else {
+                    com.wavehouse.presentation.settings.paymentconfig.PaymentConfigScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }

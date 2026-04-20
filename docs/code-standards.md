@@ -3,9 +3,16 @@
 > **Phiên bản:** 1.0.0 | **Cập nhật:** 2026-04-17 | **Kotlin** · **Jetpack Compose** · **MVVM + Clean**
 
 ## Documentation Maintenance
-**Last Updated:** 2026-04-17  
-**Document Version:** 1.0  
+**Last Updated:** 2026-04-20  
+**Document Version:** 1.1  
 **Maintained By:** Development Team
+
+---
+
+## 0. Quy định chung
+
+- Tất cả tài liệu kế hoạch trong thư mục `.windsurf/plans` phải được viết bằng tiếng Việt để đảm bảo đồng nhất giao tiếp nội bộ.
+- Khi cập nhật kế hoạch, ghi rõ bối cảnh, mục tiêu, các bước triển khai và các hạng mục còn mở tương tự ví dụ hiện có.
 
 ---
 

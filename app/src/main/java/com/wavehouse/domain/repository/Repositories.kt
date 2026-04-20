@@ -36,6 +36,9 @@ interface ProductRepository {
 
     suspend fun uploadProductImage(productId: String, imageBytes: ByteArray): ApiResult<String>
 
+    /** Xoá ảnh sản phẩm khỏi Firebase Storage theo download URL. */
+    suspend fun deleteProductImage(imageUrl: String): ApiResult<Unit>
+
     fun getCategories(): Flow<ApiResult<List<Category>>>
 
     fun getUnitsOfMeasure(): Flow<ApiResult<List<UnitOfMeasure>>>
@@ -125,5 +128,17 @@ interface WarehouseRepository {
 
     suspend fun getWarehouseById(id: String): ApiResult<Warehouse>
 
+    /** Theo dõi thay đổi realtime của một warehouse (vd. đổi `qrImageUrl`). */
+    fun observeWarehouse(id: String): Flow<ApiResult<Warehouse>>
+
     suspend fun switchWarehouse(userId: String, warehouseId: String): ApiResult<Unit>
+
+    /** Cập nhật URL ảnh QR thanh toán cho warehouse. */
+    suspend fun updateQrImageUrl(warehouseId: String, qrImageUrl: String?): ApiResult<Unit>
+
+    /** Upload ảnh QR lên Firebase Storage, trả về URL download. */
+    suspend fun uploadQrImage(warehouseId: String, imageBytes: ByteArray): ApiResult<String>
+
+    /** Xoá ảnh QR khỏi Firebase Storage bằng URL download. */
+    suspend fun deleteQrImage(imageUrl: String): ApiResult<Unit>
 }

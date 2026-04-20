@@ -97,6 +97,14 @@ class ConfirmPaymentUseCase @Inject constructor(
     }
 }
 
+class CancelOrderUseCase @Inject constructor(
+    private val orderRepository: OrderRepository
+) {
+    suspend operator fun invoke(orderId: String): ApiResult<Unit> {
+        return orderRepository.cancelOrder(orderId)
+    }
+}
+
 /**
  * Lấy đơn hàng hôm nay
  */

@@ -11,8 +11,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
@@ -152,35 +156,85 @@ fun AddEditProductScreen(
                 .padding(horizontal = 24.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Hero Image Section
+            // Product Image Picker Section
+            val imagePickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.GetContent()
+            ) { uri -> uri?.let(viewModel::onPickImage) }
+
+            val currentPreview = uiState.pendingImageUri ?: uiState.imageUrl
             Box(
                 Modifier
                     .fillMaxWidth()
                     .height(190.dp)
                     .clip(RoundedCornerShape(24.dp))
+                    .background(SurfaceContainerLow)
+                    .clickable(enabled = !uiState.isUploadingImage) {
+                        imagePickerLauncher.launch("image/*")
+                    }
             ) {
-                AsyncImage(
-                    model = "https://lh3.googleusercontent.com/aida-public/AB6AXuAbXkxcOKdQzVz1Rm_KmWiIjrAXVMGfSqqiUhOVxcyxwobPDEqd4Oog4PKSVQTJ3dyGRDkv5ixoBdWUfnjeVninerLhy554Km4ooM5NCjJL1bjl_qphOrITjMTD1Lzu7xz5Plw6YZsUWLN34-UZ2C4qxwiIXC0Cs7hT5m1cgWDR2NF6lFO2IjOV9O-J1M0xuYxQcmkymP8X3h4Xh6KcxOlfWgXD5gfT2NT45vnpnHeAgdTheTaHniDoqm1sYY8VM-Uvj0C5eOR3WXs",
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color(0x9900391A))
+                if (currentPreview != null) {
+                    AsyncImage(
+                        model = currentPreview,
+                        contentDescription = "Ảnh sản phẩm",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, Color(0x9900391A))
+                                )
                             )
+                    )
+                    // Nút xoá ảnh
+                    IconButton(
+                        onClick = { viewModel.onRemoveImage() },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.45f))
+                    ) {
+                        Icon(Icons.Filled.Close, "Xoá ảnh", tint = Color.White)
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Filled.AddPhotoAlternate,
+                            contentDescription = null,
+                            tint = PrimaryColor,
+                            modifier = Modifier.size(48.dp)
                         )
-                )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(24.dp)
-                ) {
-                    Text("Danh mục nông sản", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
-                    Text("Lô hàng mới", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Chạm để thêm ảnh sản phẩm",
+                            fontWeight = FontWeight.SemiBold,
+                            color = PrimaryColor
+                        )
+                        Text(
+                            "(tỷ lệ 16:9 đẹp nhất)",
+                            fontSize = 12.sp,
+                            color = OnSurfaceVariant
+                        )
+                    }
+                }
+
+                if (uiState.isUploadingImage) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.4f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
+                    }
                 }
             }
 

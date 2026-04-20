@@ -2,8 +2,8 @@
 > **Phiên bản:** 1.0.0 | **Cập nhật:** 2026-04-17
 
 ## Documentation Maintenance
-**Last Updated:** 2026-04-17  
-**Document Version:** 1.0  
+**Last Updated:** 2026-04-20  
+**Document Version:** 1.1  
 **Maintained By:** Development Team
 
 ## Tổng quan
@@ -28,6 +28,7 @@ Dự án WaveHouse đang được phát triển theo kiến trúc **Clean Archit
    - **Product**: Quản lý danh sách (`list`), chi tiết (`detail`), thêm/sửa (`addedit`), và tích hợp ML Kit quét mã vạch (`scanner`).
    - **Stock**: Nhập kho (`stockin`), xuất kho (`stockout`), lịch sử (`history`), cảnh báo tồn kho thấp (`lowstock`), hao hụt (`shrinkage`), và tổng quan (`overview`).
    - **POS**: Màn hình bán hàng (`PosScreen`).
+   - **Order**: Quản lý đơn hàng (`history`, `detail`).
    - **Supplier**: Quản lý nhà cung cấp (`list`, `addedit`).
    - **Report**: Màn hình báo cáo (`ReportScreen`).
    - **Staff**: Quản lý phân quyền và phê duyệt (`ManageStaffScreen`).

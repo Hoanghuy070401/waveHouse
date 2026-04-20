@@ -9,12 +9,16 @@ import com.wavehouse.domain.usecase.product.DeleteProductUseCase
 import com.wavehouse.domain.usecase.product.GetProductsUseCase
 import com.wavehouse.domain.usecase.product.SearchProductsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,7 +33,7 @@ data class ProductListUiState(
     val deleteSuccess: Boolean = false
 )
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ProductListViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
@@ -41,53 +45,50 @@ class ProductListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ProductListUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _warehouseId = MutableStateFlow("")
     private val _searchQuery = MutableStateFlow("")
 
     init {
         initUser()
-        observeSearch()
+        observeProducts()
     }
 
     private fun initUser() {
         viewModelScope.launch {
-            val user = getCurrentUserUseCase() ?: return@launch
-            _uiState.update { it.copy(warehouseId = user.warehouseId) }
-            loadProducts(user.warehouseId)
-        }
-    }
-
-    private fun loadProducts(warehouseId: String) {
-        viewModelScope.launch {
-            getProductsUseCase(warehouseId).collectLatest { result ->
-                when (result) {
-                    is ApiResult.Success -> _uiState.update {
-                        it.copy(products = result.data, isLoading = false, isRefreshing = false)
-                    }
-                    is ApiResult.Error -> _uiState.update {
-                        it.copy(error = result.message, isLoading = false, isRefreshing = false)
-                    }
-                    ApiResult.Loading -> _uiState.update { it.copy(isLoading = true) }
+            val user = getCurrentUserUseCase()
+            if (user == null) {
+                _uiState.update {
+                    it.copy(isLoading = false, isRefreshing = false, error = "Chưa đăng nhập")
                 }
+                return@launch
             }
+            _uiState.update { it.copy(warehouseId = user.warehouseId) }
+            _warehouseId.value = user.warehouseId
         }
     }
 
-    private fun observeSearch() {
+    /** Single product stream driven by warehouseId + debounced query.
+     *  `flatMapLatest` auto-cancels the previous Firebase listener when inputs change,
+     *  preventing duplicate collectors from accumulating across refresh/search. */
+    private fun observeProducts() {
         viewModelScope.launch {
-            _searchQuery
-                .debounce(300)
-                .distinctUntilChanged()
-                .collectLatest { query ->
-                    val warehouseId = _uiState.value.warehouseId
-                    if (warehouseId.isBlank()) return@collectLatest
-                    if (query.isBlank()) {
-                        loadProducts(warehouseId)
-                    } else {
-                        searchProductsUseCase(warehouseId, query).collectLatest { result ->
-                            if (result is ApiResult.Success) {
-                                _uiState.update { it.copy(products = result.data) }
-                            }
+            combine(
+                _warehouseId.filter { it.isNotBlank() }.distinctUntilChanged(),
+                _searchQuery.debounce(300).distinctUntilChanged()
+            ) { wId, query -> wId to query.trim() }
+                .flatMapLatest { (wId, query) ->
+                    if (query.isBlank()) getProductsUseCase(wId)
+                    else searchProductsUseCase(wId, query)
+                }
+                .collectLatest { result ->
+                    when (result) {
+                        is ApiResult.Success -> _uiState.update {
+                            it.copy(products = result.data, isLoading = false, isRefreshing = false, error = null)
                         }
+                        is ApiResult.Error -> _uiState.update {
+                            it.copy(error = result.message, isLoading = false, isRefreshing = false)
+                        }
+                        ApiResult.Loading -> _uiState.update { it.copy(isLoading = true) }
                     }
                 }
         }
@@ -100,7 +101,14 @@ class ProductListViewModel @Inject constructor(
 
     fun onRefresh() {
         _uiState.update { it.copy(isRefreshing = true) }
-        initUser()
+        // Re-emit the current warehouseId so the flow re-fetches without spawning new collectors.
+        val current = _warehouseId.value
+        if (current.isBlank()) {
+            initUser()
+        } else {
+            _warehouseId.value = ""
+            _warehouseId.value = current
+        }
     }
 
     fun deleteProduct(productId: String) {

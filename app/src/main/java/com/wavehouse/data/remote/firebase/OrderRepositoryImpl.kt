@@ -97,7 +97,40 @@ class OrderRepositoryImpl @Inject constructor(
             batchUpdates["products/$productId/currentStock"] = newQty
         }
 
-        database.reference.updateChildren(batchUpdates).await()
+        try {
+            database.reference.updateChildren(batchUpdates).await()
+        } catch (e: Exception) {
+            // Rollback: order write failed after stock was already deducted via transactions.
+            // Add back the deducted quantities so stock stays consistent with the missing order.
+            Timber.e(e, "Order batch write failed — rolling back stock for ${order.items.size} items")
+            for (item in order.items) {
+                try {
+                    val stockQtyRef = database.getReference("stock/$warehouseId/items/${item.productId}/quantity")
+                    kotlinx.coroutines.suspendCancellableCoroutine<Unit> { cont ->
+                        stockQtyRef.runTransaction(object : com.google.firebase.database.Transaction.Handler {
+                            override fun doTransaction(
+                                currentData: com.google.firebase.database.MutableData
+                            ): com.google.firebase.database.Transaction.Result {
+                                val current = currentData.getValue(Double::class.java) ?: 0.0
+                                currentData.value = current + item.quantity
+                                return com.google.firebase.database.Transaction.success(currentData)
+                            }
+                            override fun onComplete(
+                                error: com.google.firebase.database.DatabaseError?,
+                                committed: Boolean,
+                                snapshot: com.google.firebase.database.DataSnapshot?
+                            ) {
+                                // Best-effort rollback — always resume to continue unwinding other items.
+                                cont.resumeWith(Result.success(Unit))
+                            }
+                        })
+                    }
+                } catch (rollbackErr: Exception) {
+                    Timber.e(rollbackErr, "Rollback failed for product ${item.productId}")
+                }
+            }
+            throw e
+        }
         Timber.d("Order created: $orderId, deducted ${order.items.size} items")
 
         orderId

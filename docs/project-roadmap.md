@@ -2,8 +2,8 @@
 > **Phiên bản:** 1.0.0 | **Cập nhật:** 2026-04-17
 
 ## Documentation Maintenance
-**Last Updated:** 2026-04-17  
-**Document Version:** 1.0  
+**Last Updated:** 2026-04-20  
+**Document Version:** 1.1  
 **Maintained By:** Development Team
 
 ## Phase 1: Authentication & Project Foundation (Đã hoàn thành)
@@ -21,16 +21,20 @@
 - [x] Màn hình Thêm / Chỉnh sửa Sản phẩm, kèm tích hợp Firebase Storage (upload ảnh).
 - [x] Tích hợp Barcode / QR Scanning bằng ML Kit.
 
-## Phase 3: Quản Lý Tồn Kho & Bán Hàng (Đang triển khai)
+## Phase 3: Quản Lý Tồn Kho & Bán Hàng (Đã hoàn thành)
 - [x] Thiết lập luồng Nhập kho (Inbound) và Xuất kho (Outbound).
 - [x] Tạo module Quét mã vạch tự động trừ tồn kho.
 - [x] Đồng bộ hóa dữ liệu realtime với Realtime Database (Single Source of Truth).
 - [x] Offline caching bằng Room Database.
-- [ ] Tính năng POS (Point of sale) - Đang nâng cấp UI/UX.
+- [x] Màn hình POS (Point of Sale) cơ bản.
+- [x] Màn hình Quản lý đơn hàng (Order History, Order Detail).
 
-## Phase 4: Quản Trị Hệ Thống & Tính Năng Mở Rộng
+## Phase 4: Quản Trị Hệ Thống & Tính Năng Mở Rộng (Đang triển khai)
 - [x] Quản lý nhà cung cấp (Suppliers).
-- [x] Tích hợp push notification cảnh báo tồn kho thấp.
-- [x] Chức năng trích xuất / xuất báo cáo căn bản.
-- [x] Quản lý nhân viên (Staff/Role management).
+- [x] Tích hợp push notification cảnh báo tồn kho thấp (FCM Service).
+- [x] Màn hình báo cáo (Report Screen).
+- [x] Quản lý nhân viên (Manage Staff Screen).
+- [x] Màn hình Cài đặt (Settings).
 - [ ] Tinh chỉnh hiệu năng ứng dụng, rà soát lại rule bảo mật của Realtime Database.
+- [ ] Tích hợp dynamic pricing và lịch sử giá sản phẩm.
+- [ ] Báo cáo xuất Excel/PDF.

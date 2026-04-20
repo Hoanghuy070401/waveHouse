@@ -188,9 +188,14 @@ class ProductRepositoryImpl @Inject constructor(
         productId: String,
         imageBytes: ByteArray
     ): ApiResult<String> = safeApiCall {
-        val ref = storage.reference.child("product_images/${productId}_${System.currentTimeMillis()}.jpg")
+        val ref = storage.reference.child("product_images/$productId.jpg")
         ref.putBytes(imageBytes).await()
         ref.downloadUrl.await().toString()
+    }
+
+    override suspend fun deleteProductImage(imageUrl: String): ApiResult<Unit> = safeApiCall {
+        runCatching { storage.getReferenceFromUrl(imageUrl).delete().await() }
+        Unit
     }
 
     override fun getCategories(): Flow<ApiResult<List<Category>>> = callbackFlow {
