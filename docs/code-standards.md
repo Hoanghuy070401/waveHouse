@@ -1,10 +1,10 @@
 # Code Standards — WaveHouse Android
 
-> **Phiên bản:** 1.0.0 | **Cập nhật:** 2026-04-17 | **Kotlin** · **Jetpack Compose** · **MVVM + Clean**
+> **Phiên bản:** 1.2.0 | **Cập nhật:** 2026-04-21 | **Kotlin** · **Jetpack Compose** · **MVVM + Clean**
 
 ## Documentation Maintenance
-**Last Updated:** 2026-04-20  
-**Document Version:** 1.1  
+**Last Updated:** 2026-04-21
+**Document Version:** 1.2
 **Maintained By:** Development Team
 
 ---

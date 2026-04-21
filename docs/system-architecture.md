@@ -1,10 +1,10 @@
 # System Architecture — WaveHouse
 
-> **Phiên bản:** 1.0.0 (Draft) | **Cập nhật:** 2026-04-17
+> **Phiên bản:** 1.2.0 | **Cập nhật:** 2026-04-21
 
 ## Documentation Maintenance
-**Last Updated:** 2026-04-20  
-**Document Version:** 1.1  
+**Last Updated:** 2026-04-21
+**Document Version:** 1.2
 **Maintained By:** Development Team
 
 ---

@@ -43,6 +43,7 @@ import com.wavehouse.presentation.pos.PosScreen
 import com.wavehouse.presentation.report.ReportScreen
 import com.wavehouse.presentation.settings.SettingsScreen
 import com.wavehouse.presentation.staff.ManageStaffScreen
+import com.wavehouse.presentation.stock.detail.StockEntryDetailScreen
 import com.wavehouse.presentation.stock.history.StockHistoryScreen
 import com.wavehouse.presentation.stock.lowstock.LowStockAlertScreen
 import com.wavehouse.presentation.stock.overview.StockOverviewScreen
@@ -105,6 +106,7 @@ private val routesWithoutBottomBar = setOf(
     Routes.StockOut.route,
     Routes.Shrinkage.route,
     Routes.StockHistory.route,
+    Routes.StockEntryDetail.route,
     Routes.LowStockAlert.route,
     Routes.NewPassword.route,
     Routes.ChangePassword.route,
@@ -470,8 +472,27 @@ fun AppNavHost(
                 enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
                 exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
             ) {
-                StockHistoryScreen(onNavigateBack = { navController.popBackStack() })
+                StockHistoryScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToDetail = { entryId ->
+                        navController.navigate(Routes.StockEntryDetail.createRoute(entryId))
+                    }
+                )
             }
+
+            composable(
+                route = Routes.StockEntryDetail.route,
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
+            ) {
+                StockEntryDetailScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToOrder = { orderId ->
+                        navController.navigate(Routes.OrderDetail.createRoute(orderId))
+                    }
+                )
+            }
+
 
             composable(
                 route = Routes.LowStockAlert.route,

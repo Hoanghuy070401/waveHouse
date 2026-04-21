@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 data class StockHistoryUiState(
     val entries: List<StockEntry> = emptyList(),
-    val filterIndex: Int = 0, // 0=All, 1=In, 2=Out
+    val filterIndex: Int = 0, // 0=Tất cả, 1=Nhập kho, 2=Xuất kho, 3=Hao hụt
     val isLoading: Boolean = true,
     val error: String? = null
 )
@@ -35,7 +35,9 @@ class StockHistoryViewModel @Inject constructor(
             getStockHistoryUseCase(user.warehouseId).collectLatest { result ->
                 when (result) {
                     is ApiResult.Success -> {
-                        _allEntries.value = result.data
+                        // Loại bỏ tất cả entries do POS tạo ra (source=SALE).
+                        // Lịch sử bán hàng xem ở màn hình Liịch sử Đơn Hàng riêng biệt.
+                        _allEntries.value = result.data.filter { it.source != "SALE" }
                         applyFilter(_uiState.value.filterIndex)
                         _uiState.update { it.copy(isLoading = false) }
                     }
@@ -56,7 +58,12 @@ class StockHistoryViewModel @Inject constructor(
     private fun applyFilter(index: Int) {
         val filtered = when (index) {
             1 -> _allEntries.value.filter { it.type == StockEntryType.IN }
-            2 -> _allEntries.value.filter { it.type == StockEntryType.OUT }
+            2 -> _allEntries.value.filter {
+                // Chỉ xuất kho thủ công (MANUAL), không được lọc SALE ở đây nữa
+                // vì đã bị loại khỏi _allEntries rồi.
+                it.type == StockEntryType.OUT
+            }
+            3 -> _allEntries.value.filter { it.type == StockEntryType.SHRINKAGE }
             else -> _allEntries.value
         }
         _uiState.update { it.copy(entries = filtered) }

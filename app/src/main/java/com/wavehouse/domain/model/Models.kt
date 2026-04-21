@@ -165,7 +165,11 @@ data class StockEntry(
     val shrinkageReason: ShrinkageReason? = null,  // Chỉ cho type = SHRINKAGE
     val createdBy: String,
     val createdByName: String,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    /** Nguồn gốc giao dịch: SALE (từ POS), MANUAL (thủ công), ADJUST, SHRINKAGE */
+    val source: String? = null,
+    /** ID đơn hàng gốc — chỉ có khi source=SALE, dùng để điều hướng sang OrderDetailScreen */
+    val orderId: String? = null
 )
 
 // ═══════════════════════════════════════════════════════════════

@@ -97,6 +97,28 @@ class OrderRepositoryImpl @Inject constructor(
             batchUpdates["products/$productId/currentStock"] = newQty
         }
 
+        // Ghi stock_entries (OUT) cho từng item để hiển thị trong Lịch sử giao dịch
+        val now = System.currentTimeMillis()
+        for (item in order.items) {
+            val entryId = database.getReference("stock_entries").push().key
+                ?: UUID.randomUUID().toString()
+            val entryPath = "stock_entries/$entryId"
+            batchUpdates["$entryPath/id"] = entryId
+            batchUpdates["$entryPath/type"] = StockEntryType.OUT.name
+            batchUpdates["$entryPath/productId"] = item.productId
+            batchUpdates["$entryPath/productName"] = item.productName
+            batchUpdates["$entryPath/productSku"] = item.productSku
+            batchUpdates["$entryPath/warehouseId"] = warehouseId
+            batchUpdates["$entryPath/quantity"] = item.quantity
+            batchUpdates["$entryPath/unitCostPrice"] = item.costPrice
+            batchUpdates["$entryPath/note"] = "Bán hàng · Đơn ${orderId.takeLast(6).uppercase()}"
+            batchUpdates["$entryPath/createdBy"] = order.createdBy
+            batchUpdates["$entryPath/createdByName"] = order.createdByName
+            batchUpdates["$entryPath/createdAt"] = now
+            batchUpdates["$entryPath/source"] = "SALE"
+            batchUpdates["$entryPath/orderId"] = orderId  // ← Link về Order gốc
+        }
+
         try {
             database.reference.updateChildren(batchUpdates).await()
         } catch (e: Exception) {

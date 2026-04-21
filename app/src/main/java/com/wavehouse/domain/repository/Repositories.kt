@@ -53,6 +53,8 @@ interface StockRepository {
 
     fun getStockHistory(warehouseId: String): Flow<ApiResult<List<StockEntry>>>
 
+    suspend fun getStockEntryById(entryId: String): ApiResult<StockEntry>
+
     fun getProductStockHistory(productId: String, warehouseId: String): Flow<ApiResult<List<StockEntry>>>
 
     suspend fun createStockIn(

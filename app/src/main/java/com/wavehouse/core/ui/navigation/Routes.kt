@@ -46,6 +46,9 @@ sealed class Routes(val route: String) {
     data object StockOut : Routes("stock_out")
     data object Shrinkage : Routes("shrinkage")           // Hao hụt
     data object StockHistory : Routes("stock_history")
+    data object StockEntryDetail : Routes("stock_entry_detail/{entryId}") {
+        fun createRoute(entryId: String) = "stock_entry_detail/$entryId"
+    }
     data object LowStockAlert : Routes("low_stock_alert")
 
     // ── POS sub-screens ─────────────────────────────────────────

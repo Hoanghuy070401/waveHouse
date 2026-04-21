@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
@@ -107,6 +108,15 @@ fun StockOverviewScreen(
                     icon = Icons.Filled.History,
                     iconColor = MaterialTheme.colorScheme.primary,
                     onClick = { navController.navigate(Routes.StockHistory.route) }
+                )
+            }
+            item {
+                StockActionCard(
+                    title = "Lịch Sử Đơn Hàng",
+                    description = "Xem lịch sử thanh toán / bán hàng POS",
+                    icon = Icons.Filled.Receipt,
+                    iconColor = MaterialTheme.colorScheme.secondary,
+                    onClick = { navController.navigate(Routes.OrderHistory.route) }
                 )
             }
             item {

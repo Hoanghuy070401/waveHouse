@@ -1,40 +1,63 @@
 # Project Roadmap — WaveHouse
-> **Phiên bản:** 1.0.0 | **Cập nhật:** 2026-04-17
+> **Phiên bản:** 1.2.0 | **Cập nhật:** 2026-04-21
 
 ## Documentation Maintenance
-**Last Updated:** 2026-04-20  
-**Document Version:** 1.1  
+**Last Updated:** 2026-04-21
+**Document Version:** 1.2
 **Maintained By:** Development Team
 
-## Phase 1: Authentication & Project Foundation (Đã hoàn thành)
-- [x] Khởi tạo dự án Android & cấu hình theo chuẩn Clean Architecture (MVVM + Hilt).
-- [x] Thiết lập Jetpack Compose Theme & Navigation Graph nền tảng.
-- [x] Đăng nhập & Đăng ký sử dụng Firebase Auth.
-- [x] Xử lý luồng Quên mật khẩu, Xác thực Email, và Deep Link thiết lập mật khẩu mới.
-- [x] Áp dụng Role-based Access Control (RBAC) và luồng phê duyệt Admin.
-- [x] Migrate Remote source sang Firebase Realtime Database.
-- [x] Xây dựng các interface Repository và Use Case ban đầu.
+---
 
-## Phase 2: Màn Hình Chính & Sản Phẩm (Đã hoàn thành)
-- [x] Hoàn thiện giao diện màn hình Dashboard.
-- [x] Xây dựng danh sách Sản phẩm (tìm kiếm, phân trang).
-- [x] Màn hình Thêm / Chỉnh sửa Sản phẩm, kèm tích hợp Firebase Storage (upload ảnh).
-- [x] Tích hợp Barcode / QR Scanning bằng ML Kit.
+## Phase 1: Authentication & Project Foundation ✅ Hoàn thành
+- [x] Khởi tạo dự án Android & cấu hình Clean Architecture (MVVM + Hilt)
+- [x] Jetpack Compose Theme & Navigation Graph
+- [x] Đăng nhập & Đăng ký (Firebase Auth)
+- [x] Luồng Quên mật khẩu, Email verification, Deep Link đặt lại mật khẩu
+- [x] Role-based Access Control (RBAC): Admin / Warehouse / Accountant / Staff
+- [x] Màn hình Pending Approval — Admin duyệt tài khoản mới
+- [x] Migrate Remote source → Firebase Realtime Database
+- [x] Repository interfaces & Use Cases ban đầu
 
-## Phase 3: Quản Lý Tồn Kho & Bán Hàng (Đã hoàn thành)
-- [x] Thiết lập luồng Nhập kho (Inbound) và Xuất kho (Outbound).
-- [x] Tạo module Quét mã vạch tự động trừ tồn kho.
-- [x] Đồng bộ hóa dữ liệu realtime với Realtime Database (Single Source of Truth).
-- [x] Offline caching bằng Room Database.
-- [x] Màn hình POS (Point of Sale) cơ bản.
-- [x] Màn hình Quản lý đơn hàng (Order History, Order Detail).
+---
 
-## Phase 4: Quản Trị Hệ Thống & Tính Năng Mở Rộng (Đang triển khai)
-- [x] Quản lý nhà cung cấp (Suppliers).
-- [x] Tích hợp push notification cảnh báo tồn kho thấp (FCM Service).
-- [x] Màn hình báo cáo (Report Screen).
-- [x] Quản lý nhân viên (Manage Staff Screen).
-- [x] Màn hình Cài đặt (Settings).
-- [ ] Tinh chỉnh hiệu năng ứng dụng, rà soát lại rule bảo mật của Realtime Database.
-- [ ] Tích hợp dynamic pricing và lịch sử giá sản phẩm.
-- [ ] Báo cáo xuất Excel/PDF.
+## Phase 2: Màn Hình Chính & Sản Phẩm ✅ Hoàn thành
+- [x] Dashboard tổng quan KPIs (doanh thu, nhập/xuất hôm nay, tồn kho)
+- [x] Danh sách Sản phẩm (tìm kiếm realtime, phân trang)
+- [x] Thêm/Sửa/Xóa Sản phẩm + upload ảnh Firebase Storage
+- [x] Barcode / QR Scanning (ML Kit)
+- [x] Màn hình chi tiết sản phẩm với lịch sử giá (`PriceRecord`)
+
+---
+
+## Phase 3: Quản Lý Tồn Kho & Bán Hàng ✅ Hoàn thành
+- [x] Nhập kho (In-bound) với tự động tính giá vốn MAC
+- [x] Xuất kho (Out-bound) + Điều chỉnh tồn kho + Ghi nhận hao hụt (Shrinkage)
+- [x] Lịch sử nhập/xuất theo sản phẩm & theo kho
+- [x] Cảnh báo tồn kho thấp (Low Stock Alert)
+- [x] POS Screen cơ bản: giỏ hàng, thanh toán
+- [x] Lịch sử đơn hàng (`OrderHistoryScreen`) + Chi tiết đơn (`OrderDetailScreen`)
+- [x] Hỗ trợ bán lẻ số thập phân (`allowDecimal` flag)
+- [x] POS grid sản phẩm cuộn ngang 2 hàng, checkout bar compact
+
+---
+
+## Phase 4: Quản Trị & Tính Năng Mở Rộng 🔄 Đang triển khai
+- [x] Quản lý nhà cung cấp (Suppliers CRUD)
+- [x] Push notification tồn kho thấp (FCM)
+- [x] Màn hình Báo cáo (Report Screen)
+- [x] Quản lý nhân viên & phân quyền (ManageStaffScreen)
+- [x] Settings: đổi mật khẩu, quản lý QR thanh toán
+- [x] Dynamic Pricing: lịch sử giá, cập nhật giá vốn/giá bán có ghi chú
+- [ ] Tinh chỉnh hiệu năng & rà soát Security Rules Realtime Database
+- [ ] Báo cáo xuất Excel/PDF
+- [ ] Top sản phẩm bán chạy (doanh thu theo sản phẩm)
+
+---
+
+## Phase 5: Scale & Polish 📋 Kế hoạch
+- [ ] Cursor-based pagination cho Order History (thay limitToLast 300)
+- [ ] Multi-warehouse switching trong app
+- [ ] Lịch sử giao dịch theo nhà cung cấp
+- [ ] Offline mode hoàn toàn (local Room DB + sync queue)
+- [ ] In nhãn barcode (Bluetooth printer)
+- [ ] Dashboard web admin (tách riêng)

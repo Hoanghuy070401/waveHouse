@@ -80,6 +80,11 @@ class StockRepositoryImpl @Inject constructor(
             awaitClose { query.removeEventListener(listener) }
         }
 
+    override suspend fun getStockEntryById(entryId: String): ApiResult<StockEntry> = safeApiCall {
+        val snap = entriesRef.child(entryId).get().await()
+        snap.toStockEntry() ?: throw Exception("Không tìm thấy giao dịch")
+    }
+
     override fun getProductStockHistory(
         productId: String,
         warehouseId: String
@@ -116,7 +121,7 @@ class StockRepositoryImpl @Inject constructor(
 
         // ── Atomic read-compute-write trên product node ─────────────────────
         // runTransaction đảm bảo MAC tính đúng kể cả khi 2 nhập kho đồng thời
-        data class ProductUpdate(val newQty: Double, val newMac: Double)
+        data class ProductUpdate(val newQty: Double, val newMac: Double, val name: String, val sku: String)
         var productUpdate: ProductUpdate? = null
 
         suspendCancellableCoroutine<Unit> { cont ->
@@ -140,7 +145,9 @@ class StockRepositoryImpl @Inject constructor(
 
                         data.child("currentStock").value = newQty
                         data.child("costPrice").value = macRounded
-                        productUpdate = ProductUpdate(newQty, macRounded)
+                        val pname = data.child("name").getValue(String::class.java) ?: ""
+                        val psku = data.child("sku").getValue(String::class.java) ?: ""
+                        productUpdate = ProductUpdate(newQty, macRounded, pname, psku)
                         return com.google.firebase.database.Transaction.success(data)
                     }
 
@@ -167,13 +174,16 @@ class StockRepositoryImpl @Inject constructor(
             "$entryPath/id" to entryId,
             "$entryPath/type" to "IN",
             "$entryPath/productId" to productId,
+            "$entryPath/productName" to update.name,
+            "$entryPath/productSku" to update.sku,
             "$entryPath/warehouseId" to warehouseId,
             "$entryPath/quantity" to quantity,
             "$entryPath/unitCostPrice" to (unitCostPrice ?: update.newMac),
             "$entryPath/macAfter" to update.newMac,
             "$entryPath/note" to note,
             "$entryPath/supplierId" to supplierId,
-            "$entryPath/createdAt" to System.currentTimeMillis()
+            "$entryPath/createdAt" to System.currentTimeMillis(),
+            "$entryPath/source" to "MANUAL"
         )
         database.reference.updateChildren(updates).await()
     }
@@ -192,6 +202,11 @@ class StockRepositoryImpl @Inject constructor(
         if (quantity > currentQty) throw Exception("Tồn kho không đủ")
         val newQty = currentQty - quantity
 
+        // Đọc productName + sku để lưu vào stock_entries
+        val productSnap = database.getReference(productPath).get().await()
+        val productName = productSnap.child("name").getValue(String::class.java) ?: ""
+        val productSku = productSnap.child("sku").getValue(String::class.java) ?: ""
+
         val entryId = entriesRef.push().key ?: UUID.randomUUID().toString()
         val entryPath = "stock_entries/$entryId"
 
@@ -202,10 +217,13 @@ class StockRepositoryImpl @Inject constructor(
             "$entryPath/id" to entryId,
             "$entryPath/type" to "OUT",
             "$entryPath/productId" to productId,
+            "$entryPath/productName" to productName,
+            "$entryPath/productSku" to productSku,
             "$entryPath/warehouseId" to warehouseId,
             "$entryPath/quantity" to quantity,
             "$entryPath/note" to note,
-            "$entryPath/createdAt" to System.currentTimeMillis()
+            "$entryPath/createdAt" to System.currentTimeMillis(),
+            "$entryPath/source" to "MANUAL"
         )
         database.reference.updateChildren(updates).await()
     }
@@ -240,6 +258,10 @@ class StockRepositoryImpl @Inject constructor(
         if (quantity > currentQty) throw Exception("Tồn kho không đủ")
         val newQty = currentQty - quantity
 
+        val productSnap = database.getReference(productPath).get().await()
+        val productName = productSnap.child("name").getValue(String::class.java) ?: ""
+        val productSku = productSnap.child("sku").getValue(String::class.java) ?: ""
+
         val entryId = entriesRef.push().key ?: UUID.randomUUID().toString()
         val entryPath = "stock_entries/$entryId"
 
@@ -250,11 +272,14 @@ class StockRepositoryImpl @Inject constructor(
             "$entryPath/id" to entryId,
             "$entryPath/type" to "SHRINKAGE",
             "$entryPath/productId" to productId,
+            "$entryPath/productName" to productName,
+            "$entryPath/productSku" to productSku,
             "$entryPath/warehouseId" to warehouseId,
             "$entryPath/quantity" to quantity,
             "$entryPath/shrinkageReason" to reason.name,
             "$entryPath/note" to note,
-            "$entryPath/createdAt" to System.currentTimeMillis()
+            "$entryPath/createdAt" to System.currentTimeMillis(),
+            "$entryPath/source" to "SHRINKAGE"
         )
         database.reference.updateChildren(updates).await()
     }
@@ -270,7 +295,10 @@ class StockRepositoryImpl @Inject constructor(
                         .filter { it.createdAt > todayStart }
                     
                     val todayIn = entries.filter { it.type == StockEntryType.IN }.sumOf { it.quantity }
-                    val todayOut = entries.filter { it.type == StockEntryType.OUT }.sumOf { it.quantity }
+                    // Chỉ tính xuất kho thủ công, không tính hàng đã bán (source=SALE)
+                    val todayOut = entries
+                        .filter { it.type == StockEntryType.OUT && it.source != "SALE" }
+                        .sumOf { it.quantity }
                     trySend(ApiResult.Success(DashboardStats(
                         todayStockIn = todayIn,
                         todayStockOut = todayOut
@@ -329,7 +357,9 @@ private fun DataSnapshot.toStockEntry(): StockEntry? {
             },
             createdBy = child("createdBy").getValue(String::class.java) ?: "",
             createdByName = child("createdByName").getValue(String::class.java) ?: "",
-            createdAt = child("createdAt").getValue(Long::class.java) ?: 0L
+            createdAt = child("createdAt").getValue(Long::class.java) ?: 0L,
+            source = child("source").getValue(String::class.java),  // ← Fix: parse source field
+            orderId = child("orderId").getValue(String::class.java)  // ← Fix: parse orderId link
         )
     } catch (e: Exception) { null }
 }
