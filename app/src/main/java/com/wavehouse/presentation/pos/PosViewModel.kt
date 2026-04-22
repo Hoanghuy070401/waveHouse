@@ -262,27 +262,26 @@ class PosViewModel @Inject constructor(
     fun requestCheckout() {
         val state = _uiState.value
         if (state.isCartEmpty || state.isCheckingOut) return
-        when (state.selectedPaymentMethod) {
-            PaymentMethod.CASH -> _uiState.update { it.copy(showCashConfirmDialog = true) }
-            PaymentMethod.QR -> {
-                if (!state.qrEnabled) {
-                    _limitEvents.trySend(
-                        if (state.qrImageUrl.isNullOrBlank())
-                            "Chưa cấu hình mã QR. Vui lòng cấu hình trong Tài khoản → Cấu hình thanh toán QR"
-                        else "Bạn cần xác minh email trước khi sử dụng thanh toán QR"
-                    )
-                } else {
-                    startQrCheckout()
-                }
+        
+        if (state.selectedPaymentMethod == PaymentMethod.QR) {
+            if (!state.qrEnabled) {
+                _limitEvents.trySend(
+                    if (state.qrImageUrl.isNullOrBlank())
+                        "Chưa cấu hình mã QR. Vui lòng cấu hình trong Tài khoản → Cấu hình thanh toán QR"
+                    else "Bạn cần xác minh email trước khi sử dụng thanh toán QR"
+                )
+                return
             }
         }
+        
+        _uiState.update { it.copy(showCashConfirmDialog = true) }
     }
 
     fun dismissCashConfirmDialog() {
         _uiState.update { it.copy(showCashConfirmDialog = false) }
     }
 
-    fun confirmCashCheckout() {
+    fun confirmCashCheckout(paidAmount: Double) {
         val user = currentUser ?: return
         val state = _uiState.value
         if (state.isCartEmpty || state.isCheckingOut) return
@@ -305,7 +304,8 @@ class PosViewModel @Inject constructor(
                     warehouseId = user.warehouseId,
                     paymentMethod = PaymentMethod.CASH,
                     createdBy = user.id,
-                    createdByName = user.name
+                    createdByName = user.name,
+                    paidAmount = paidAmount
                 )
             ) {
                 is ApiResult.Success -> _uiState.update {
@@ -332,7 +332,7 @@ class PosViewModel @Inject constructor(
         }
     }
 
-    private fun startQrCheckout() {
+    fun startQrCheckout(paidAmount: Double) {
         val user = currentUser ?: return
         val state = _uiState.value
         if (state.isCartEmpty || state.isCheckingOut) return
@@ -356,7 +356,8 @@ class PosViewModel @Inject constructor(
                     warehouseId = user.warehouseId,
                     paymentMethod = PaymentMethod.QR,
                     createdBy = user.id,
-                    createdByName = user.name
+                    createdByName = user.name,
+                    paidAmount = paidAmount
                 )
             ) {
                 is ApiResult.Success -> _uiState.update {

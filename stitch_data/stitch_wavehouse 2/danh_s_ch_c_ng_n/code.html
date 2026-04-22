@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#472a00",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#cfe2f9",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#3d4a3f",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#00391a",
+                        "surface-tint": "#006d37",
+                        "surface-dim": "#d5dcd2",
+                        "surface": "#f4fbf1",
+                        "secondary-fixed": "#d1e4fb",
+                        "primary-container": "#27ae60",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#00210c",
+                        "tertiary-fixed": "#ffddb9",
+                        "surface-container-highest": "#dde5db",
+                        "on-secondary-fixed": "#091d2e",
+                        "inverse-surface": "#2b322c",
+                        "inverse-primary": "#61de8a",
+                        "surface-container-low": "#eff6ec",
+                        "on-secondary-container": "#526478",
+                        "secondary-fixed-dim": "#b5c8df",
+                        "primary-fixed": "#7efba4",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#2b1700",
+                        "on-surface": "#171d17",
+                        "outline-variant": "#bccabc",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#ecf3e9",
+                        "on-error": "#ffffff",
+                        "tertiary": "#865300",
+                        "on-tertiary-fixed-variant": "#663e00",
+                        "outline": "#6d7a6e",
+                        "surface-container": "#e9f0e6",
+                        "on-primary": "#ffffff",
+                        "background": "#f4fbf1",
+                        "secondary": "#4e6073",
+                        "primary-fixed-dim": "#61de8a",
+                        "tertiary-fixed-dim": "#ffb961",
+                        "primary": "#006d37",
+                        "on-background": "#171d17",
+                        "surface-variant": "#dde5db",
+                        "surface-bright": "#f4fbf1",
+                        "surface-container-high": "#e3eae0",
+                        "on-primary-fixed-variant": "#005228",
+                        "on-secondary-fixed-variant": "#36485b",
+                        "tertiary-container": "#d58700"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Work Sans"],
+                        "display": ["Work Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, .font-headline { font-family: 'Work Sans', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen">
+<header class="sticky top-0 z-40 bg-[#eff6ec]/90 backdrop-blur-md flex justify-between items-center w-full px-4 py-4 border-b border-surface-container-highest">
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container-highest transition-colors rounded-full">
+<span class="material-symbols-outlined text-[#006d37]">menu</span>
+</button>
+<h1 class="font-headline font-bold text-xl tracking-tight text-[#006d37]">Quản lý công nợ</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-primary-container overflow-hidden">
+<img alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtkHEu8_iRVlyXavNknq4ilJ8LhoznCYyLBvumP4XQ10QMU5D1qmUOzl1MOCPqBnrZ5L-Ba_gt96tbZlhij3wdCA0UADGprGzbawoZSYo-tM-ixJMt8UkfejmNfolFGs0iANPYVQ760PmRolseHCn6A9vWNXY2kQn2MY2RDPApPs3dyyJtTSBvd3K-ipaDjuWBCOdjTDOB2430xdtPXT_x-QGrFfu37TC3H_NrphUS7NZP_-lu7xqYyZ60TRFM2nrPW2dMCo_l2eg"/>
+</div>
+</div>
+</header>
+<main class="px-4 py-6 max-w-5xl mx-auto">
+<div class="flex items-center gap-3 mb-8">
+<div class="flex-grow relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-11 pr-4 py-3 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-on-surface placeholder:text-outline-variant text-sm" placeholder="Tìm tên, SĐT..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary h-[46px] px-4 rounded-2xl font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all shadow-md shadow-primary/20 shrink-0">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="text-sm">Thêm</span>
+</button>
+</div>
+<div class="flex items-baseline gap-8 mb-6 overflow-x-auto pb-1 scrollbar-hide">
+<button class="text-primary border-b-4 border-primary pb-2 font-bold text-base whitespace-nowrap">Tất cả</button>
+<button class="text-outline hover:text-on-surface transition-colors pb-2 font-semibold text-base whitespace-nowrap">Quá hạn</button>
+<button class="text-outline hover:text-on-surface transition-colors pb-2 font-semibold text-base whitespace-nowrap">Đã thu xong</button>
+</div>
+<div class="grid grid-cols-2 gap-3 mb-10">
+<div class="bg-surface-container-low p-4 rounded-2xl">
+<p class="text-outline text-[11px] font-semibold uppercase tracking-wider mb-1">Tổng nợ</p>
+<p class="font-headline font-extrabold text-lg text-on-surface">1.250.000.000đ</p>
+</div>
+<div class="bg-error-container/20 p-4 rounded-2xl border border-error-container/30">
+<p class="text-error text-[11px] font-semibold uppercase tracking-wider mb-1">Quá hạn</p>
+<p class="font-headline font-extrabold text-lg text-error">425.000.000đ</p>
+</div>
+<div class="bg-tertiary-container/10 p-4 rounded-2xl">
+<p class="text-tertiary text-[11px] font-semibold uppercase tracking-wider mb-1">Trong hạn</p>
+<p class="font-headline font-extrabold text-lg text-tertiary">825.000.000đ</p>
+</div>
+<div class="bg-secondary-container/20 p-4 rounded-2xl">
+<p class="text-secondary text-[11px] font-semibold uppercase tracking-wider mb-1">Đã thu (Tháng)</p>
+<p class="font-headline font-extrabold text-lg text-on-secondary-container">310.000.000đ</p>
+</div>
+</div>
+<div class="space-y-4 pb-10">
+<div class="bg-surface-container-highest p-5 rounded-3xl transition-all active:scale-[0.98] flex flex-col gap-4 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-2xl">person</span>
+</div>
+<div>
+<h3 class="font-bold text-[18px] text-on-surface leading-tight">Nguyễn Văn A</h3>
+<p class="text-outline text-xs mt-0.5">Cập nhật: 2 giờ trước</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-lg bg-error text-on-error text-[10px] font-black tracking-widest uppercase">Quá hạn</span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<p class="font-headline font-extrabold text-2xl text-on-surface">5.000.000đ</p>
+<div class="flex gap-2">
+<button class="w-12 h-12 flex items-center justify-center bg-surface-container-low border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">call</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center bg-surface-container-low border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">receipt_long</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-5 rounded-3xl transition-all active:scale-[0.98] flex flex-col gap-4 border border-surface-container-highest shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-tertiary-container/20 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-2xl">store</span>
+</div>
+<div>
+<h3 class="font-bold text-[18px] text-on-surface leading-tight">Đại lý Hoa Sen</h3>
+<p class="text-outline text-xs mt-0.5">Cập nhật: Hôm qua</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-lg bg-tertiary-container text-on-tertiary-container text-[10px] font-black tracking-widest uppercase">Trong hạn</span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<p class="font-headline font-extrabold text-2xl text-on-surface">45.500.000đ</p>
+<div class="flex gap-2">
+<button class="w-12 h-12 flex items-center justify-center bg-white border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">call</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center bg-white border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">receipt_long</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-highest p-5 rounded-3xl transition-all active:scale-[0.98] flex flex-col gap-4 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl">person</span>
+</div>
+<div>
+<h3 class="font-bold text-[18px] text-on-surface leading-tight">Lê Thị Bưởi</h3>
+<p class="text-outline text-xs mt-0.5">Cập nhật: 3 ngày trước</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-lg bg-tertiary-container text-on-tertiary-container text-[10px] font-black tracking-widest uppercase">Trong hạn</span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<p class="font-headline font-extrabold text-2xl text-on-surface">12.000.000đ</p>
+<div class="flex gap-2">
+<button class="w-12 h-12 flex items-center justify-center bg-surface-container-low border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">call</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center bg-surface-container-low border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">receipt_long</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-5 rounded-3xl transition-all active:scale-[0.98] flex flex-col gap-4 border-2 border-error-container/40 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-2xl">home_work</span>
+</div>
+<div>
+<h3 class="font-bold text-[18px] text-on-surface leading-tight">Nông trại Xanh</h3>
+<p class="text-outline text-xs mt-0.5">Cập nhật: 1 tuần trước</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-lg bg-error text-on-error text-[10px] font-black tracking-widest uppercase">Quá hạn</span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<p class="font-headline font-extrabold text-2xl text-on-surface">120.000.000đ</p>
+<div class="flex gap-2">
+<button class="w-12 h-12 flex items-center justify-center bg-white border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">call</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center bg-white border border-outline-variant/20 rounded-2xl text-primary transition-colors active:bg-primary/10">
+<span class="material-symbols-outlined text-2xl">receipt_long</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+</body></html>

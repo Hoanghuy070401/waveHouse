@@ -12,9 +12,15 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.wavehouse.domain.model.Order
+import com.wavehouse.domain.repository.OrderRepository
+import com.wavehouse.domain.repository.ProductRepository
+
 data class StockHistoryUiState(
     val entries: List<StockEntry> = emptyList(),
-    val filterIndex: Int = 0, // 0=Tất cả, 1=Nhập kho, 2=Xuất kho, 3=Hao hụt
+    val orders: List<Order> = emptyList(),
+    val filterIndex: Int = 0, // 0=Bán lẻ (Orders), 1=Nhập kho, 2=Xuất Cũ, 3=Hao hụt
+    val inStockPercentage: Float = 0f, // Tỷ lệ còn hàng
     val isLoading: Boolean = true,
     val error: String? = null
 )
@@ -22,29 +28,59 @@ data class StockHistoryUiState(
 @HiltViewModel
 class StockHistoryViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
-    private val getStockHistoryUseCase: GetStockHistoryUseCase
+    private val getStockHistoryUseCase: GetStockHistoryUseCase,
+    private val orderRepository: OrderRepository,
+    private val productRepository: ProductRepository
 ) : ViewModel() {
 
     private val _allEntries = MutableStateFlow<List<StockEntry>>(emptyList())
+    private val _allOrders = MutableStateFlow<List<Order>>(emptyList())
     private val _uiState = MutableStateFlow(StockHistoryUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             val user = getCurrentUserUseCase() ?: return@launch
-            getStockHistoryUseCase(user.warehouseId).collectLatest { result ->
-                when (result) {
-                    is ApiResult.Success -> {
-                        // Loại bỏ tất cả entries do POS tạo ra (source=SALE).
-                        // Lịch sử bán hàng xem ở màn hình Liịch sử Đơn Hàng riêng biệt.
-                        _allEntries.value = result.data.filter { it.source != "SALE" }
+            
+            // 1. Collect Orders (CHO BÁN LẺ)
+            launch {
+                orderRepository.getOrders(user.warehouseId, limit = 300).collectLatest { result ->
+                    if (result is ApiResult.Success) {
+                        _allOrders.value = result.data
                         applyFilter(_uiState.value.filterIndex)
-                        _uiState.update { it.copy(isLoading = false) }
                     }
-                    is ApiResult.Error -> _uiState.update {
-                        it.copy(error = result.message, isLoading = false)
+                }
+            }
+
+            // 2. Collect Stock Entries (CHO NHẬP / XUẤT)
+            launch {
+                getStockHistoryUseCase(user.warehouseId).collectLatest { result ->
+                    when (result) {
+                        is ApiResult.Success -> {
+                            _allEntries.value = result.data.filter { it.source != "SALE" }
+                            applyFilter(_uiState.value.filterIndex)
+                            _uiState.update { it.copy(isLoading = false) }
+                        }
+                        is ApiResult.Error -> _uiState.update {
+                            it.copy(error = result.message, isLoading = false)
+                        }
+                        ApiResult.Loading -> _uiState.update { it.copy(isLoading = true) }
                     }
-                    ApiResult.Loading -> _uiState.update { it.copy(isLoading = true) }
+                }
+            }
+            // 3. Collect Products to calculate stock percentage
+            launch {
+                productRepository.getProducts(user.warehouseId).collectLatest { result ->
+                    if (result is ApiResult.Success) {
+                        val products = result.data
+                        if (products.isNotEmpty()) {
+                            val inStockCount = products.count { it.currentStock > 0.0 }
+                            val percentage = inStockCount.toFloat() / products.size.toFloat()
+                            _uiState.update { it.copy(inStockPercentage = percentage) }
+                        } else {
+                            _uiState.update { it.copy(inStockPercentage = 0f) }
+                        }
+                    }
                 }
             }
         }
@@ -56,16 +92,14 @@ class StockHistoryViewModel @Inject constructor(
     }
 
     private fun applyFilter(index: Int) {
-        val filtered = when (index) {
+        val filteredEntries = when (index) {
             1 -> _allEntries.value.filter { it.type == StockEntryType.IN }
-            2 -> _allEntries.value.filter {
-                // Chỉ xuất kho thủ công (MANUAL), không được lọc SALE ở đây nữa
-                // vì đã bị loại khỏi _allEntries rồi.
-                it.type == StockEntryType.OUT
-            }
+            2 -> _allEntries.value.filter { it.type == StockEntryType.OUT }
             3 -> _allEntries.value.filter { it.type == StockEntryType.SHRINKAGE }
-            else -> _allEntries.value
+            else -> emptyList() // Bán lẻ không dùng cái này, dùng orders
         }
-        _uiState.update { it.copy(entries = filtered) }
+        val filteredOrders = if (index == 0) _allOrders.value else emptyList()
+        
+        _uiState.update { it.copy(entries = filteredEntries, orders = filteredOrders) }
     }
 }

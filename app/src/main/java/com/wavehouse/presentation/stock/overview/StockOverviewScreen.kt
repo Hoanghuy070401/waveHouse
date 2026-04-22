@@ -28,8 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import com.wavehouse.core.ui.components.WaveAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,18 +43,15 @@ import com.wavehouse.core.ui.theme.ChartIn
 import com.wavehouse.core.ui.theme.ChartOut
 import com.wavehouse.core.ui.theme.StockLow
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockOverviewScreen(
     navController: NavController
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Kho hàng", fontWeight = FontWeight.SemiBold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+            WaveAppBar(
+                title = "Kho hàng",
+                onBack = { navController.navigateUp() }
             )
         },
         floatingActionButton = {
@@ -65,14 +61,15 @@ fun StockOverviewScreen(
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Nhập kho")
             }
-        }
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 StockActionCard(

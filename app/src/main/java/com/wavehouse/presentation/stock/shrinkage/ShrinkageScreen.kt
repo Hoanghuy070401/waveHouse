@@ -7,20 +7,29 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.wavehouse.core.ui.components.WaveAppBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import com.wavehouse.domain.model.Product
 import com.wavehouse.domain.model.ShrinkageReason
+import java.text.NumberFormat
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+private val vndFmt = NumberFormat.getNumberInstance(Locale("vi", "VN"))
+private fun Double.toVnd() = "${vndFmt.format(this)}đ"
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShrinkageScreen(
     onNavigateBack: () -> Unit,
@@ -49,18 +58,9 @@ fun ShrinkageScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Ghi nhận hao hụt", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
+            WaveAppBar(title = "Ghi nhận hao hụt", onBack = onNavigateBack)
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { paddingValues ->
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -221,9 +221,33 @@ private fun ProductSelectRow(
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (product.imageUrl.isNullOrBlank()) {
+                    Text(
+                        text = product.name.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.Medium)
                 Text(
@@ -232,12 +256,22 @@ private fun ProductSelectRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(
-                "${product.currentStock} ${product.unitName ?: "sp"}",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "${product.currentStock} ${product.unitName ?: "sp"}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (product.salePrice > 0) {
+                    Text(
+                        product.salePrice.toVnd(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -256,6 +290,31 @@ private fun SelectedProductCard(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (product.imageUrl.isNullOrBlank()) {
+                    Text(
+                        text = product.name.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.SemiBold)
                 Text(
@@ -263,6 +322,17 @@ private fun SelectedProductCard(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+            
+            if (product.salePrice > 0) {
+                Text(
+                    product.salePrice.toVnd(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(end = 12.dp)
+                )
+            }
+            
             IconButton(onClick = onClear) {
                 Icon(Icons.Filled.Close, "Đổi sản phẩm")
             }

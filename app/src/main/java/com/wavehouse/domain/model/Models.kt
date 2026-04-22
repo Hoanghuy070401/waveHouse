@@ -153,6 +153,8 @@ data class StockEntry(
     val productId: String,
     val productName: String,
     val productSku: String,
+    /** URL ảnh sản phẩm — snapshot khi tạo phiếu (để hiển thị trong lịch sử dù sau này sản phẩm bị xoá) */
+    val productImageUrl: String? = null,
     val warehouseId: String,
     val quantity: Double,
     /** Giá nhập lô này (dùng để tính MAC). null = không ghi nhận giá */
@@ -201,6 +203,7 @@ enum class PaymentMethod(val label: String) {
 enum class OrderStatus(val label: String) {
     PENDING("Chờ thanh toán"),
     PAID("Đã thanh toán"),
+    DEBT("Ghi nợ"),
     CANCELLED("Đã huỷ")
 }
 
@@ -220,12 +223,24 @@ data class Order(
     val totalAmount: Double,
     val paymentMethod: PaymentMethod,
     val status: OrderStatus = OrderStatus.PENDING,
+    val paidAmount: Double = totalAmount, 
+    val debtAmount: Double = 0.0,
     val createdBy: String,
     val createdByName: String,
     val createdAt: Long = System.currentTimeMillis(),
-    val paidAt: Long? = null
+    val paidAt: Long? = null,
+    /** Tên khách hàng — null = khách lẻ vãng lai */
+    val customerName: String? = null,
+    /** SĐT khách hàng — dùng cho tìm kiếm & lọc lịch sử */
+    val customerPhone: String? = null,
+    /** Ghi chú đơn hàng (yêu cầu đặc biệt, giao hàng…) */
+    val note: String? = null,
+    /** Chiết khấu/giảm giá trực tiếp trên đơn (không tính trong items) */
+    val discountAmount: Double = 0.0
 ) {
     val itemCount: Int get() = items.sumOf { it.quantity }.toInt()
+    /** Subtotal trước giảm giá */
+    val subtotal: Double get() = items.sumOf { it.lineTotal }
 }
 
 /** Domain model: OrderItem snapshot (serialized in Firestore)

@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
@@ -24,6 +23,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.wavehouse.core.ui.components.WaveAppBar
+import com.wavehouse.core.ui.components.searchAction
 import com.wavehouse.core.ui.theme.ChartIn
 import com.wavehouse.core.ui.theme.ChartOut
 import com.wavehouse.core.ui.theme.PrimaryGreen
@@ -36,6 +37,15 @@ import com.wavehouse.domain.model.StockEntryType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import com.wavehouse.presentation.order.history.OrderHistoryCard
+import com.wavehouse.core.utils.todayStartMillis
+import com.wavehouse.core.utils.weekStartMillis
+import com.wavehouse.core.utils.monthStartMillis
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 private val SurfaceBase         = Color(0xFFF4FBF1)
@@ -50,36 +60,66 @@ private val OnSurfaceVariant    = Color(0xFF3D4E39)
 fun StockHistoryScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToOrder: (String) -> Unit = {},
     viewModel: StockHistoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var periodIndex by remember { mutableIntStateOf(0) }   // 0=Hôm nay, 1=Tuần này, 2=Tháng này
 
-    Scaffold(containerColor = SurfaceBase) { padding ->
+    Scaffold(
+        containerColor = SurfaceBase,
+        topBar = {
+            WaveAppBar(
+                title = "Lịch sử & Báo cáo",
+                onBack = onNavigateBack,
+            )
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // ── Header bar ────────────────────────────────────────────
-            HistoryHeader(onBack = onNavigateBack)
-
-            // Pre-compute filtered + grouped BEFORE LazyColumn (must be in @Composable scope)
-            val visible by remember(uiState.entries, searchQuery) {
+        
+            val visibleOrders by remember(uiState.orders, searchQuery, periodIndex) {
                 derivedStateOf {
-                    if (searchQuery.isBlank()) uiState.entries
-                    else uiState.entries.filter {
-                        it.productName.contains(searchQuery, ignoreCase = true) ||
-                                it.id.contains(searchQuery, ignoreCase = true)
+                    val minDate = when (periodIndex) {
+                        0 -> todayStartMillis()
+                        1 -> weekStartMillis()
+                        else -> monthStartMillis()
                     }
+                    var list = uiState.orders.filter { it.createdAt >= minDate }
+                    if (searchQuery.isNotBlank()) {
+                        list = list.filter { it.id.contains(searchQuery, ignoreCase = true) }
+                    }
+                    list
                 }
             }
-            val grouped by remember(visible) { derivedStateOf { visible.groupByDay() } }
+
+            val visibleEntries by remember(uiState.entries, searchQuery, periodIndex) {
+                derivedStateOf {
+                    val minDate = when (periodIndex) {
+                        0 -> todayStartMillis()
+                        1 -> weekStartMillis()
+                        else -> monthStartMillis()
+                    }
+                    var list = uiState.entries.filter { it.createdAt >= minDate }
+                    if (searchQuery.isNotBlank()) {
+                        list = list.filter {
+                            it.id.contains(searchQuery, ignoreCase = true) ||
+                            it.productName.contains(searchQuery, ignoreCase = true)
+                        }
+                    }
+                    list
+                }
+            }
 
             // Scrollable content
             LazyColumn(
-                contentPadding = PaddingValues(bottom = 32.dp),
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 // ── Search bar ────────────────────────────────────────
@@ -111,26 +151,18 @@ fun StockHistoryScreen(
                     Spacer(Modifier.height(16.dp))
                 }
 
-                // ── Stats cards row ───────────────────────────────────
+                // ── Summary Cards ──────────────────────────────────────────
                 item {
                     StatsCardsRow(
-                        entries = uiState.entries,
+                        orders = visibleOrders,
+                        entries = visibleEntries,
                         filterIndex = uiState.filterIndex,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
-                    Spacer(Modifier.height(20.dp))
                 }
+                item { Spacer(Modifier.height(20.dp)) }
 
-                // ── Section header ────────────────────────────────────
-                item {
-                    SectionHeader(
-                        title = sectionTitle(uiState.filterIndex),
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Spacer(Modifier.height(10.dp))
-                }
-
-                // ── Loading / empty states ────────────────────────────
+                // ── Transactions list ──────────────────────────────────────
                 when {
                     uiState.isLoading -> item {
                         Box(
@@ -139,7 +171,8 @@ fun StockHistoryScreen(
                         ) { CircularProgressIndicator(color = PrimaryGreen) }
                     }
 
-                    uiState.entries.isEmpty() -> item {
+                    (uiState.filterIndex == 0 && visibleOrders.isEmpty()) || 
+                    (uiState.filterIndex != 0 && visibleEntries.isEmpty()) -> item {
                         Box(
                             Modifier.fillMaxWidth().height(160.dp).padding(horizontal = 16.dp),
                             contentAlignment = Alignment.Center
@@ -147,76 +180,71 @@ fun StockHistoryScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("📋", fontSize = 40.sp)
-                                Text("Chưa có giao dịch nào", color = OnSurfaceVariant)
+                                Text("Chưa có giao dịch nào phù hợp", color = OnSurfaceVariant)
                             }
                         }
                     }
 
                     else -> {
-                        grouped.forEach { (header, dayEntries) ->
-                            item(key = "h-$header") {
-                                DayHeader(
-                                    label = header,
-                                    count = dayEntries.size,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                )
+                        if (uiState.filterIndex == 0) { // Bán Lẻ (Orders)
+                            val groupedOrders = visibleOrders.groupBy {
+                                val cal = java.util.Calendar.getInstance().apply { timeInMillis = it.createdAt }
+                                "${cal.get(java.util.Calendar.DAY_OF_MONTH)}/${cal.get(java.util.Calendar.MONTH) + 1}/${cal.get(java.util.Calendar.YEAR)}"
                             }
-                            items(dayEntries, key = { it.id }) { entry ->
-                                StockEntryCard(
-                                    entry = entry,
-                                    onClick = { onNavigateToDetail(entry.id) },
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
-                                )
+                            groupedOrders.forEach { (header, dayOrders) ->
+                                item(key = "ho-$header") {
+                                    DayHeader(label = header, count = dayOrders.size, modifier = Modifier.padding(horizontal = 16.dp))
+                                }
+                                items(dayOrders, key = { "o-${it.id}" }) { order ->
+                                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)) {
+                                        OrderHistoryCard(
+                                            order = order,
+                                            onClick = { onNavigateToOrder(order.id) },
+                                        )
+                                    }
+                                }
+                            }
+                        } else { // Nhập / Xuất
+                            val groupedEntries = visibleEntries.groupBy {
+                                val cal = java.util.Calendar.getInstance().apply { timeInMillis = it.createdAt }
+                                "${cal.get(java.util.Calendar.DAY_OF_MONTH)}/${cal.get(java.util.Calendar.MONTH) + 1}/${cal.get(java.util.Calendar.YEAR)}"
+                            }
+                            groupedEntries.forEach { (header, dayEntries) ->
+                                item(key = "he-$header") {
+                                    DayHeader(label = header, count = dayEntries.size, modifier = Modifier.padding(horizontal = 16.dp))
+                                }
+                                items(dayEntries, key = { "e-${it.id}" }) { entry ->
+                                    StockEntryCard(
+                                        entry = entry,
+                                        onClick = { onNavigateToDetail(entry.id) },
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
 
-                // ── Warehouse status footer ───────────────────────────
-                item {
-                    Spacer(Modifier.height(16.dp))
-                    WarehouseStatusCard(
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                }
+                // Remove status footer from scrollable list
+            } // END LazyColumn
+
+            // ── Warehouse status footer (Pinned to bottom) ─────────────────
+            Surface(
+                color = SurfaceBase,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            ) {
+                WarehouseStatusCard(
+                    inStockPercentage = uiState.inStockPercentage,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Header — hamburger + title + search icon (no back arrow per design)
-// ══════════════════════════════════════════════════════════════════════════════
-
-@Composable
-private fun HistoryHeader(onBack: () -> Unit) {
-    Surface(color = SurfaceBase, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Back arrow (navigate-back exists in nav stack)
-            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại",
-                    tint = PrimaryGreen, modifier = Modifier.size(22.dp))
-            }
-            Text(
-                text = "Lịch sử & Báo cáo",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryGreen,
-                modifier = Modifier.weight(1f).padding(start = 4.dp)
-            )
-            IconButton(onClick = {}, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Filled.Search, "Tìm kiếm", tint = PrimaryGreen,
-                    modifier = Modifier.size(22.dp))
-            }
-        }
-    }
-}
+// HistoryHeader removed — replaced by WaveAppBar in Scaffold topBar
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Search bar
@@ -332,9 +360,18 @@ private fun CategoryTabRow(selected: Int, onSelected: (Int) -> Unit, modifier: M
 // ══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun StatsCardsRow(entries: List<StockEntry>, filterIndex: Int, modifier: Modifier = Modifier) {
-    val totalCount = entries.size
-    val totalValue = entries.sumOf { (it.unitCostPrice ?: 0.0) * it.quantity }
+private fun StatsCardsRow(
+    orders: List<com.wavehouse.domain.model.Order>,
+    entries: List<StockEntry>,
+    filterIndex: Int,
+    modifier: Modifier = Modifier
+) {
+    val totalCount = if (filterIndex == 0) orders.size else entries.size
+    val totalValue = if (filterIndex == 0) {
+        orders.sumOf { it.paidAmount }
+    } else {
+        entries.sumOf { (it.unitCostPrice ?: 0.0) * it.quantity }
+    }
 
     val (countLabel, valueLabel) = when (filterIndex) {
         1 -> "TỔNG LƯỢT NHẬP" to "TỔNG CHI PHÍ"
@@ -489,7 +526,7 @@ private fun StockEntryCard(entry: StockEntry, onClick: () -> Unit, modifier: Mod
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Icon circle
+            // Product image or icon circle
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -497,7 +534,17 @@ private fun StockEntryCard(entry: StockEntry, onClick: () -> Unit, modifier: Mod
                     .background(iconColor.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(iconVector, null, tint = iconColor, modifier = Modifier.size(24.dp))
+                if (!entry.productImageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(entry.productImageUrl).crossfade(true).build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(iconVector, null, tint = iconColor, modifier = Modifier.size(24.dp))
+                }
             }
 
             // Title + subtitle
@@ -548,7 +595,7 @@ private fun StockEntryCard(entry: StockEntry, onClick: () -> Unit, modifier: Mod
 // ══════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun WarehouseStatusCard(modifier: Modifier = Modifier) {
+private fun WarehouseStatusCard(inStockPercentage: Float, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = SurfaceContainerLow,
@@ -572,7 +619,8 @@ private fun WarehouseStatusCard(modifier: Modifier = Modifier) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Trạng thái kho", style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold, color = OnSurface)
-                Text("92% mặt hàng còn hàng", style = MaterialTheme.typography.labelSmall,
+                val percentageStr = (inStockPercentage * 100).toInt()
+                Text("$percentageStr% mặt hàng còn hàng", style = MaterialTheme.typography.labelSmall,
                     color = OnSurfaceVariant)
             }
 
@@ -587,7 +635,7 @@ private fun WarehouseStatusCard(modifier: Modifier = Modifier) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .fillMaxWidth(0.92f)
+                        .fillMaxWidth(inStockPercentage)
                         .clip(CircleShape)
                         .background(PrimaryGreen)
                 )

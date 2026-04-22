@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.wavehouse.core.ui.components.WaveAppBar
 import com.wavehouse.core.ui.theme.PrimaryGreen
 import com.wavehouse.core.utils.toDateTimeString
 import com.wavehouse.core.utils.toVndString
@@ -26,7 +25,6 @@ import com.wavehouse.core.utils.todayStartMillis
 import com.wavehouse.domain.model.Order
 import com.wavehouse.domain.model.OrderStatus
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderHistoryScreen(
     onNavigateBack: () -> Unit,
@@ -37,21 +35,12 @@ fun OrderHistoryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Lịch sử bán hàng", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO: filter by date picker sheet */ }) {
-                        Icon(Icons.Filled.Tune, "Lọc")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            WaveAppBar(
+                title = "Lịch sử bán hàng",
+                onBack = onNavigateBack
             )
-        }
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             // Simple preset filters
@@ -107,7 +96,7 @@ fun OrderHistoryScreen(
 }
 
 @Composable
-private fun OrderHistoryCard(
+fun OrderHistoryCard(
     order: Order,
     onClick: () -> Unit
 ) {
@@ -168,12 +157,21 @@ private fun OrderHistoryCard(
                     fontWeight = FontWeight.Bold,
                     color = if (order.status == OrderStatus.CANCELLED) Color.Gray else PrimaryGreen
                 )
-                Text(
-                    text = order.status.label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (order.status == OrderStatus.PAID) PrimaryGreen else Color.Gray,
-                    fontWeight = FontWeight.Medium
-                )
+                if (order.debtAmount > 0) {
+                    Text(
+                         text = "Còn nợ: ${order.debtAmount.toVndString()}",
+                         style = MaterialTheme.typography.labelSmall,
+                         color = MaterialTheme.colorScheme.error,
+                         fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
+                        text = order.status.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (order.status == OrderStatus.PAID) PrimaryGreen else Color.Gray,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }

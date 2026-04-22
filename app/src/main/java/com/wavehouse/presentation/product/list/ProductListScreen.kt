@@ -1,5 +1,6 @@
 package com.wavehouse.presentation.product.list
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,9 +33,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import com.wavehouse.core.ui.components.WaveAppBar
+import com.wavehouse.core.ui.components.WaveAppBarAction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,6 +47,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.wavehouse.core.ui.theme.StockGood
@@ -67,15 +69,14 @@ fun ProductListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Sản phẩm", fontWeight = FontWeight.SemiBold) },
-                actions = {
-                    IconButton(onClick = onNavigateToScanner) {
-                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Quét barcode")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+            WaveAppBar(
+                title = "Sản phẩm",
+                actions = listOf(
+                    WaveAppBarAction(
+                        icon = Icons.Filled.QrCodeScanner,
+                        contentDescription = "Quét barcode",
+                        onClick = onNavigateToScanner
+                    )
                 )
             )
         },
@@ -88,12 +89,13 @@ fun ProductListScreen(
                     Icon(Icons.Filled.Add, contentDescription = "Thêm sản phẩm")
                 }
             }
-        }
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
         ) {
             // Search Bar
             OutlinedTextField(
@@ -207,14 +209,29 @@ fun ProductCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Product Image
-            AsyncImage(
-                model = product.imageUrl,
-                contentDescription = product.name,
+            Box(
                 modifier = Modifier
                     .size(60.dp)
-                    .clip(RoundedCornerShape(10.dp)),
-                contentScale = ContentScale.Crop
-            )
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!product.imageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(
+                        product.name.firstOrNull()?.uppercase() ?: "",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    )
+                }
+            }
 
             Spacer(Modifier.width(12.dp))
 

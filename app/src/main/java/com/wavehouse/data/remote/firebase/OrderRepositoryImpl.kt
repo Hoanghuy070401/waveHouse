@@ -70,6 +70,8 @@ class OrderRepositoryImpl @Inject constructor(
             "id"             to orderId,
             "warehouseId"    to warehouseId,
             "totalAmount"    to order.totalAmount,
+            "paidAmount"     to order.paidAmount,
+            "debtAmount"     to order.debtAmount,
             "paymentMethod"  to order.paymentMethod.name,
             "status"         to order.status.name,
             "createdBy"      to order.createdBy,
@@ -160,12 +162,37 @@ class OrderRepositoryImpl @Inject constructor(
 
 
     override suspend fun confirmPayment(orderId: String): ApiResult<Unit> = safeApiCall {
+        val snapshot = ordersRef.child(orderId).get().await()
+        val debtAmount = snapshot.child("debtAmount").getValue(Double::class.java) ?: 0.0
+        val finalStatus = if (debtAmount > 0) OrderStatus.DEBT else OrderStatus.PAID
+        
         ordersRef.child(orderId).updateChildren(
             mapOf(
-                "status" to OrderStatus.PAID.name,
+                "status" to finalStatus.name,
                 "paidAt" to System.currentTimeMillis()
             )
         ).await()
+    }
+
+    override suspend fun payDebt(orderId: String, paymentAmount: Double): ApiResult<Unit> = safeApiCall {
+        val snapshot = ordersRef.child(orderId).get().await()
+        val currentPaid = snapshot.child("paidAmount").getValue(Double::class.java) ?: 0.0
+        val currentDebt = snapshot.child("debtAmount").getValue(Double::class.java) ?: 0.0
+        
+        val newPaid = currentPaid + paymentAmount
+        val newDebt = (currentDebt - paymentAmount).coerceAtLeast(0.0)
+        val finalStatus = if (newDebt <= 0) OrderStatus.PAID else OrderStatus.DEBT
+        
+        val updates = mutableMapOf<String, Any?>(
+            "paidAmount" to newPaid,
+            "debtAmount" to newDebt,
+            "status" to finalStatus.name
+        )
+        if (finalStatus == OrderStatus.PAID) {
+            updates["paidAt"] = System.currentTimeMillis()
+        }
+        
+        ordersRef.child(orderId).updateChildren(updates).await()
     }
 
     override suspend fun cancelOrder(orderId: String): ApiResult<Unit> = safeApiCall {
@@ -192,6 +219,24 @@ class OrderRepositoryImpl @Inject constructor(
     override suspend fun getOrderById(orderId: String): ApiResult<Order> = safeApiCall {
         val snapshot = ordersRef.child(orderId).get().await()
         snapshot.toOrder() ?: throw Exception("Không tìm thấy đơn hàng")
+    }
+
+    override fun getDebtOrders(warehouseId: String): Flow<ApiResult<List<Order>>> = callbackFlow {
+        trySend(ApiResult.Loading)
+        val query = ordersRef.orderByChild("warehouseId").equalTo(warehouseId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val orders = snapshot.children.mapNotNull { it.toOrder() }
+                    .filter { it.status == OrderStatus.DEBT }
+                    .sortedByDescending { it.createdAt }
+                trySend(ApiResult.Success(orders))
+            }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(ApiResult.Error(error.message))
+            }
+        }
+        query.addValueEventListener(listener)
+        awaitClose { query.removeEventListener(listener) }
     }
 
     override fun getTodayOrders(warehouseId: String): Flow<ApiResult<List<Order>>> {
@@ -242,6 +287,8 @@ class OrderRepositoryImpl @Inject constructor(
                 warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
                 items = items,
                 totalAmount = child("totalAmount").getValue(Double::class.java) ?: 0.0,
+                paidAmount = child("paidAmount").getValue(Double::class.java) ?: child("totalAmount").getValue(Double::class.java) ?: 0.0,
+                debtAmount = child("debtAmount").getValue(Double::class.java) ?: 0.0,
                 paymentMethod = PaymentMethod.valueOf(child("paymentMethod").getValue(String::class.java) ?: "CASH"),
                 status = OrderStatus.valueOf(child("status").getValue(String::class.java) ?: "PENDING"),
                 createdBy = child("createdBy").getValue(String::class.java) ?: "",

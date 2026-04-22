@@ -7,23 +7,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -41,7 +36,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.wavehouse.core.ui.components.WaveAppBar
 import com.wavehouse.core.ui.theme.ChartIn
 import com.wavehouse.core.ui.theme.ChartOut
 import com.wavehouse.core.ui.theme.StockLow
@@ -78,34 +79,12 @@ fun StockEntryDetailScreen(
 
     Scaffold(
         topBar = {
-            // Header: nền SurfaceBase, title xanh — khớp design
-            Surface(color = SurfaceBase, modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại",
-                            tint = ChartIn)
-                    }
-                    Text(
-                        "Order Details",
-                        fontWeight = FontWeight.SemiBold,
-                        color = ChartIn,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.weight(1f)
-                    )
-                    // More actions placeholder
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Filled.MoreVert,
-                            contentDescription = null, tint = OnSurfaceVariant)
-                    }
-                }
-            }
-        }
+            WaveAppBar(
+                title = "Chi tiết giao dịch",
+                onBack = onNavigateBack
+            )
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         val bgMod = Modifier.background(SurfaceBase)
         when {
@@ -145,10 +124,11 @@ private fun StockEntryDetailContent(
 ) {
     val (icon, accent) = entry.typeIconAndColor()
     when {
-        entry.type == StockEntryType.IN       -> StockInDetailContent(entry, icon, accent, modifier)
-        entry.type == StockEntryType.SHRINKAGE -> ShrinkageDetailContent(entry, accent, modifier)
-        entry.source == "SALE"                -> SaleEntryRedirectContent(entry, accent, onOpenOrder, modifier)
-        else                                  -> GenericStockEntryDetailContent(entry, icon, accent, modifier)
+        entry.type == StockEntryType.IN        -> StockInDetailContent(entry, icon, accent, modifier)
+        entry.type == StockEntryType.SHRINKAGE -> StockLossDetailContent(entry, accent, modifier)
+        entry.type == StockEntryType.OUT       -> StockLossDetailContent(entry, accent, modifier)
+        entry.source == "SALE"                 -> SaleEntryRedirectContent(entry, accent, onOpenOrder, modifier)
+        else                                   -> GenericStockEntryDetailContent(entry, icon, accent, modifier)
     }
 }
 
@@ -207,7 +187,8 @@ private fun StockInDetailContent(
             quantity = qtyText,
             unitCost = entry.unitCostPrice,
             accent = accent,
-            icon = icon
+            icon = icon,
+            imageUrl = entry.productImageUrl
         )
 
         // ── Note ───────────────────────────────────────────────
@@ -516,19 +497,33 @@ private fun GenericStockEntryDetailContent(
 
 
 // ══════════════════════════════════════════════════════════════════
-// Chi tiết hao hụt — Stitch design
+// Chi tiết xuất kho / hao hụt — Shared Stitch layout
 // ══════════════════════════════════════════════════════════════════
 
+/**
+ * Shared layout for OUT (manual stock-out) and SHRINKAGE entries.
+ *
+ * Both types carry a quantity deduction and a monetary cost; the only
+ * differences are the title text, the value-card label, the qty label,
+ * and whether a shrinkage-reason row is shown.
+ */
 @Composable
-private fun ShrinkageDetailContent(
+private fun StockLossDetailContent(
     entry: StockEntry,
-    accent: Color,   // = ChartOut (red)
+    accent: Color,
     modifier: Modifier = Modifier
 ) {
-    val lossValue = entry.displayValue() ?: 0.0
+    val isShrinkage = entry.type == StockEntryType.SHRINKAGE
+    val costPerUnit = entry.unitCostPrice ?: entry.macAfter ?: 0.0
+    val lossValue   = costPerUnit * entry.quantity
+    val hasCost     = costPerUnit > 0.0 && entry.quantity > 0.0
     val dateStr = remember(entry.createdAt) {
         SimpleDateFormat("dd/MM/yyyy", Locale("vi", "VN")).format(Date(entry.createdAt))
     }
+    val titleText  = if (isShrinkage) "Chi tiết hao hụt" else "Chi tiết xuất kho"
+    val valueLabel = if (isShrinkage) "TỔNG GIÁ TRỊ THẤT THOÁT" else "TỔNG GIÁ TRỊ XUẤT"
+    val qtyLabel   = if (isShrinkage) "Hao hụt" else "Xuất"
+    val qtyIcon    = if (isShrinkage) Icons.Filled.Warning else Icons.Filled.ArrowUpward
 
     Column(
         modifier = modifier
@@ -536,7 +531,7 @@ private fun ShrinkageDetailContent(
             .padding(top = 8.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // ── Title block (nền SurfaceContainerLow) ─────────────────
+        // ── Title block ────────────────────────────────────────────
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = SurfaceContainerLow,
@@ -546,29 +541,35 @@ private fun ShrinkageDetailContent(
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Pill + date
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     StatusChip(label = "✓ Đã xác nhận", color = Color(0xFFB8860B))
-                    Text(dateStr, style = MaterialTheme.typography.labelMedium,
-                        color = OnSurfaceVariant)
+                    Text(
+                        dateStr,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = OnSurfaceVariant
+                    )
                 }
-                // Title xanh
                 Text(
-                    "Chi tiết hao hụt",
+                    titleText,
                     fontWeight = FontWeight.Black,
                     fontSize = 26.sp,
                     color = Color(0xFF006D37)
                 )
-                // Lý do: ...
-                if (entry.shrinkageReason != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Text("Lý do:", style = MaterialTheme.typography.bodyMedium,
-                            color = OnSurfaceVariant)
+                // Shrinkage-only: lý do
+                if (isShrinkage && entry.shrinkageReason != null) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Lý do:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = OnSurfaceVariant
+                        )
                         Text(
                             entry.shrinkageReason.label,
                             style = MaterialTheme.typography.bodyMedium,
@@ -578,10 +579,18 @@ private fun ShrinkageDetailContent(
                         )
                     }
                 }
+                // OUT-only: hiển thị ID phiếu xuất
+                if (!isShrinkage) {
+                    Text(
+                        "#${entry.id.takeLast(6).uppercase()}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = OnSurfaceVariant
+                    )
+                }
             }
         }
 
-        // ── Staff card ──────────────────────────────────────────────
+        // ── Staff card ─────────────────────────────────────────────
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = SurfaceContainerLow,
@@ -593,12 +602,17 @@ private fun ShrinkageDetailContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(
-                    modifier = Modifier.size(64.dp).clip(CircleShape)
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
                         .background(Color(0xFF006D37).copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Person, null, tint = Color(0xFF006D37),
-                        modifier = Modifier.size(32.dp))
+                    Icon(
+                        Icons.Filled.Person, null,
+                        tint = Color(0xFF006D37),
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
                 Text(
                     "NGƯỜI THỰC HIỆN",
@@ -607,175 +621,192 @@ private fun ShrinkageDetailContent(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 0.8.sp
                 )
-                Text(entry.createdByName.ifBlank { "—" },
+                Text(
+                    entry.createdByName.ifBlank { "—" },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = OnSurface)
+                    color = OnSurface
+                )
             }
         }
 
-        // ── Loss value card ─────────────────────────────────────────
+        // ── Value / loss card ──────────────────────────────────────
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = Color.White,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
-                    "TỔNG GIÁ TRỊ THẤT THOÁT",
+                    valueLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = OnSurfaceVariant,
                     letterSpacing = 0.8.sp
                 )
-                Text(
-                    "-${lossValue.toVndString()}",
-                    fontWeight = FontWeight.Black,
-                    fontSize = 34.sp,
-                    color = accent
-                )
-                // Note sub-section
+                if (hasCost) {
+                    Text(
+                        "-${lossValue.toVndString()}",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 34.sp,
+                        color = accent
+                    )
+                    val priceLabel = if (entry.unitCostPrice != null) "Giá nhập" else "Giá vốn (MAC)"
+                    Text(
+                        "$priceLabel: ${costPerUnit.toVndString()}/đv × ${formatQty(entry.quantity)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        "-${formatQty(entry.quantity)} đv",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 34.sp,
+                        color = accent
+                    )
+                    Text(
+                        "Chưa có thông tin giá vốn",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant
+                    )
+                }
+                // Ghi chú — embedded inside value card
                 if (!entry.note.isNullOrBlank()) {
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = SurfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Menu, null,
-                                    tint = OnSurfaceVariant, modifier = Modifier.size(14.dp))
-                                Text("GHI CHÚ",
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.Menu, null,
+                                    tint = OnSurfaceVariant,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    "GHI CHÚ",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = OnSurfaceVariant,
                                     fontWeight = FontWeight.SemiBold,
-                                    letterSpacing = 0.8.sp)
+                                    letterSpacing = 0.8.sp
+                                )
                             }
-                            Text(entry.note, style = MaterialTheme.typography.bodyMedium,
-                                color = OnSurface)
+                            Text(
+                                entry.note,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = OnSurface
+                            )
                         }
                     }
                 }
             }
         }
 
-        // ── Product list ────────────────────────────────────────────
+        // ── Product list header ────────────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Danh sách sản phẩm",
+            Text(
+                "Danh sách sản phẩm",
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFF006D37))
+                color = Color(0xFF006D37)
+            )
             Surface(shape = CircleShape, color = SurfaceContainerHigh) {
-                Text("1 item",
+                Text(
+                    "1 item",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                     color = OnSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                )
             }
         }
 
-        ShrinkageProductItem(
-            productName = entry.productName,
-            sku = entry.productSku,
-            quantity = formatQty(entry.quantity),
-            accent = accent
-        )
-
-        // ── Location card ───────────────────────────────────────────
-        ShrinkageLocationCard()
-    }
-}
-
-@Composable
-private fun ShrinkageProductItem(productName: String, sku: String, quantity: String, accent: Color) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = SurfaceContainerLow,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        // ── Product row card ───────────────────────────────────────
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = SurfaceContainerLow,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Box(
-                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp))
-                    .background(accent.copy(alpha = 0.10f)),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Filled.Warning, null,
-                    tint = accent, modifier = Modifier.size(28.dp))
-            }
-
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(productName.ifBlank { "Sản phẩm" },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold, color = OnSurface)
-                if (sku.isNotBlank()) {
-                    Text("SKU: $sku", style = MaterialTheme.typography.labelSmall,
-                        color = OnSurfaceVariant)
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(accent.copy(alpha = 0.10f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!entry.productImageUrl.isNullOrBlank()) {
+                        coil3.compose.AsyncImage(
+                            model = entry.productImageUrl,
+                            contentDescription = entry.productName,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Text(
+                            entry.productName.takeIf { it.isNotBlank() }?.firstOrNull()?.uppercase() ?: "",
+                            fontWeight = FontWeight.Bold, fontSize = 24.sp,
+                            color = accent
+                        )
+                    }
                 }
-            }
-
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("-${quantity}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold, color = accent)
-                Text("Hao hụt", style = MaterialTheme.typography.labelSmall,
-                    color = OnSurfaceVariant)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShrinkageLocationCard() {
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = SurfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Map placeholder
-            Box(
-                modifier = Modifier.fillMaxWidth().height(120.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(SurfaceContainerHigh),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.Map, null,
-                    tint = OnSurfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.size(48.dp))
-            }
-            Text("KHU VỰC KIỂM KHO",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFFB8860B),
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.8.sp)
-            Text("Khu vực A — Kho chính",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold, color = OnSurface)
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Filled.AcUnit, null,
-                        tint = OnSurfaceVariant, modifier = Modifier.size(14.dp))
-                    Text("4°C", style = MaterialTheme.typography.labelSmall,
-                        color = OnSurfaceVariant)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        entry.productName.ifBlank { "Sản phẩm" },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OnSurface
+                    )
+                    if (entry.productSku.isNotBlank()) {
+                        Text(
+                            "SKU: ${entry.productSku}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = OnSurfaceVariant
+                        )
+                    }
+                    if (hasCost) {
+                        Text(
+                            "Giá vốn: ${costPerUnit.toVndString()}/đv",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = OnSurfaceVariant
+                        )
+                    }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Filled.Opacity, null,
-                        tint = OnSurfaceVariant, modifier = Modifier.size(14.dp))
-                    Text("85%", style = MaterialTheme.typography.labelSmall,
-                        color = OnSurfaceVariant)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        "-${formatQty(entry.quantity)}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = accent
+                    )
+                    Text(
+                        qtyLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant
+                    )
                 }
             }
         }
@@ -846,17 +877,20 @@ private fun IconCircle(icon: ImageVector, color: Color, size: Int = 40) {
 private fun StatusChip(label: String, color: Color) {
     Surface(
         shape = CircleShape,
-        color = color.copy(alpha = 0.14f),
-        contentColor = color
+        color = color.copy(alpha = 0.10f),
+        contentColor = color,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.5.dp,
+            color = color.copy(alpha = 0.50f)
+        ),
+        modifier = Modifier.padding(0.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(Icons.Filled.CheckCircle, null, modifier = Modifier.size(14.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+        )
     }
 }
 
@@ -888,6 +922,11 @@ private fun StockEntry.valueLabel(): String = when (type) {
     else -> "Tổng giá trị"
 }
 
+/** Giá trị của phiếu:
+ *  - IN/OUT/ADJUST: unitCostPrice × quantity (giá lô nhập)
+ *  - SHRINKAGE: unitCostPrice (giá nhập sản phẩm) hoặc macAfter (giá vốn bình quân) × quantity
+ *  Trả null nếu không có thông tin giá.
+ */
 private fun StockEntry.displayValue(): Double? {
     val priceEach = unitCostPrice ?: macAfter
     return if (priceEach != null && priceEach > 0.0) priceEach * quantity else null
@@ -1002,79 +1041,103 @@ private fun StockInProductCard(
     quantity: String,
     unitCost: Double?,
     accent: Color,
-    icon: ImageVector
+    icon: ImageVector,
+    imageUrl: String? = null
 ) {
-    // Layout design: ảnh/icon ở trên, tên + đơn giá giữa, rồi SỐ LƯỢNG / THÀNH TIỀN dưới
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = SurfaceContainerLow,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Ảnh / icon — trên cùng
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            // ── Image header — full width, ~140dp tall ─────────────────
+            val context = LocalContext.current
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(accent.copy(alpha = 0.14f)),
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .background(accent.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = accent, modifier = Modifier.size(40.dp))
-            }
-
-            // Tên sản phẩm + đơn giá
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    productName.ifBlank { "Sản phẩm không xác định" },
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = OnSurface
-                )
-                if (unitCost != null && unitCost > 0.0) {
+                if (!imageUrl.isNullOrBlank()) {
+                    coil3.compose.AsyncImage(
+                        model = coil3.request.ImageRequest.Builder(context)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = productName,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
                     Text(
-                        "Đơn giá: ${unitCost.toVndString()} / ${if (sku.isNotBlank()) sku else "kg"}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = OnSurfaceVariant
+                        productName.takeIf { it.isNotBlank() }?.firstOrNull()?.uppercase() ?: "",
+                        fontWeight = FontWeight.Bold, fontSize = 64.sp,
+                        color = accent,
+                        style = MaterialTheme.typography.displayLarge
                     )
                 }
             }
 
-            // SỐ LƯỢNG + THÀNH TIỀN — layout 2 cột
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            // ── Product info ──────────────────────────────────────────
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                // Tên sản phẩm + đơn giá
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        "SỐ LƯỢNG",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = OnSurfaceVariant,
-                        letterSpacing = 0.8.sp
+                        productName.ifBlank { "Sản phẩm không xác định" },
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = OnSurface
                     )
-                    Text(
-                        quantity,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 22.sp,
-                        color = accent
-                    )
+                    if (unitCost != null && unitCost > 0.0) {
+                        Text(
+                            "Đơn giá: ${unitCost.toVndString()} / ${if (sku.isNotBlank()) sku else "kg"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = OnSurfaceVariant
+                        )
+                    }
                 }
-                if (unitCost != null && unitCost > 0.0) {
-                    // Parse qty number from qtyText (e.g. "+100")
-                    val rawQty = quantity.trimStart('+').toDoubleOrNull() ?: 0.0
-                    val total = unitCost * rawQty
+
+                // SỐ LƯỢNG + THÀNH TIỀN — 2 cột
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(32.dp)
+                ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            "THÀNH TIỀN",
+                            "SỐ LƯỢNG",
                             style = MaterialTheme.typography.labelSmall,
                             color = OnSurfaceVariant,
                             letterSpacing = 0.8.sp
                         )
                         Text(
-                            total.toVndString(),
+                            quantity,
                             fontWeight = FontWeight.Black,
                             fontSize = 22.sp,
                             color = accent
                         )
+                    }
+                    if (unitCost != null && unitCost > 0.0) {
+                        val rawQty = quantity.trimStart('+').toDoubleOrNull() ?: 0.0
+                        val total = unitCost * rawQty
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                "THÀNH TIỀN",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = OnSurfaceVariant,
+                                letterSpacing = 0.8.sp
+                            )
+                            Text(
+                                total.toVndString(),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 22.sp,
+                                color = accent
+                            )
+                        }
                     }
                 }
             }

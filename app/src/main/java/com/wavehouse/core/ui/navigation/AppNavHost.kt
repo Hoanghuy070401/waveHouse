@@ -116,6 +116,9 @@ private val routesWithoutBottomBar = setOf(
     Routes.PaymentConfig.route,
     Routes.OrderHistory.route,
     Routes.OrderDetail.route,
+    Routes.DebtList.route,
+    Routes.DebtDetail.route,
+    Routes.DebtPayment.route,
 )
 
 @Composable
@@ -152,7 +155,7 @@ fun AppNavHost(
         NavHost(
             navController = navController,
             startDestination = Routes.Splash.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
         ) {
             // ── Auth ────────────────────────────────────────────────────────
             composable(
@@ -421,6 +424,47 @@ fun AppNavHost(
             }
             
             composable(
+                route = Routes.DebtList.route,
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
+            ) {
+                com.wavehouse.presentation.debt.list.DebtListScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToCustomerDebt = { phone -> 
+                        navController.navigate(Routes.DebtDetail.createRoute(phone))
+                    }
+                )
+            }
+            
+            composable(
+                route = Routes.DebtDetail.route,
+                arguments = listOf(navArgument("phone") {}),
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(NAV_ANIM_DURATION)) }
+            ) {
+                com.wavehouse.presentation.debt.detail.DebtDetailScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToPayment = { phone ->
+                        navController.navigate(Routes.DebtPayment.createRoute(phone))
+                    }
+                )
+            }
+            
+            composable(
+                route = Routes.DebtPayment.route,
+                arguments = listOf(navArgument("phone") {}),
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(NAV_ANIM_DURATION)) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(NAV_ANIM_DURATION)) }
+            ) {
+                com.wavehouse.presentation.debt.payment.DebtPaymentScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onPaymentSuccess = {
+                        navController.popBackStack(Routes.DebtList.route, inclusive = false)
+                    }
+                )
+            }
+            
+            composable(
                 route = Routes.OrderDetail.route,
                 arguments = listOf(navArgument("orderId") { }),
                 enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(NAV_ANIM_DURATION)) },
@@ -476,6 +520,9 @@ fun AppNavHost(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToDetail = { entryId ->
                         navController.navigate(Routes.StockEntryDetail.createRoute(entryId))
+                    },
+                    onNavigateToOrder = { orderId ->
+                        navController.navigate(Routes.OrderDetail.createRoute(orderId))
                     }
                 )
             }

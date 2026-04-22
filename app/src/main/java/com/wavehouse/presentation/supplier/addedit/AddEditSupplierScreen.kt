@@ -5,9 +5,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.wavehouse.core.ui.components.WaveAppBar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -15,7 +15,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditSupplierScreen(
     onNavigateBack: () -> Unit,
@@ -37,28 +36,13 @@ fun AddEditSupplierScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (uiState.isEditMode) "Chỉnh sửa đối tác" else "Thêm nhà cung cấp",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                actions = {
-                    TextButton(onClick = viewModel::save, enabled = !uiState.isLoading) {
-                        if (uiState.isLoading) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                        else Text("Lưu", fontWeight = FontWeight.SemiBold)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            WaveAppBar(
+                title = if (uiState.isEditMode) "Chỉnh sửa đối tác" else "Thêm nhà cung cấp",
+                onBack = onNavigateBack
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHost) }
+        snackbarHost = { SnackbarHost(snackbarHost) },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         Column(
             modifier = Modifier
@@ -67,7 +51,7 @@ fun AddEditSupplierScreen(
                 .verticalScroll(rememberScrollState())
                 .imePadding()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             OutlinedTextField(
                 value = uiState.name,

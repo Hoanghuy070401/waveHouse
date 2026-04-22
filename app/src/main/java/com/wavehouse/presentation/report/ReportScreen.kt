@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.wavehouse.core.ui.components.WaveAppBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.wavehouse.core.ui.theme.ChartIn
 import com.wavehouse.core.ui.theme.ChartOut
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
@@ -37,16 +37,9 @@ fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Báo cáo", fontWeight = FontWeight.SemiBold) },
-                actions = {
-                    IconButton(onClick = { /* TODO: Custom date range */ }) {
-                        Icon(Icons.Filled.DateRange, "Chọn thời gian")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        }
+            WaveAppBar(title = "Báo cáo")
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         Column(
             modifier = Modifier
@@ -54,7 +47,7 @@ fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             // Filter
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -62,7 +55,7 @@ fun ReportScreen(viewModel: ReportViewModel = hiltViewModel()) {
                     SegmentedButton(
                         selected = selectedFilter == index,
                         onClick = { viewModel.onTimeFilterChanged(index) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = filters.size)
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = filters.size),
                     ) {
                         Text(label, style = MaterialTheme.typography.labelMedium)
                     }

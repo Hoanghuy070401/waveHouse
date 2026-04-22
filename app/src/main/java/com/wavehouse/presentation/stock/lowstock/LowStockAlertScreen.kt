@@ -5,13 +5,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.wavehouse.core.ui.components.WaveAppBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import coil3.compose.AsyncImage
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -20,7 +25,6 @@ import com.wavehouse.core.ui.theme.StockOut
 import com.wavehouse.domain.model.StockItem
 import com.wavehouse.domain.model.StockStatus
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LowStockAlertScreen(
     onNavigateBack: () -> Unit,
@@ -31,16 +35,9 @@ fun LowStockAlertScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Cảnh báo tồn kho", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        }
+            WaveAppBar(title = "Cảnh báo tồn kho", onBack = onNavigateBack)
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         when {
             uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -118,6 +115,31 @@ private fun LowStockItemCard(item: StockItem, onStockIn: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Thumbnail Image
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!item.productImageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = item.productImageUrl,
+                        contentDescription = item.productName,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(
+                        item.productName.firstOrNull()?.uppercase() ?: "",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.productName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
                 Text("SKU: ${item.productSku}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

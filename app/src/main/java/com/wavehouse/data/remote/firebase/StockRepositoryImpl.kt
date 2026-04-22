@@ -121,7 +121,7 @@ class StockRepositoryImpl @Inject constructor(
 
         // ── Atomic read-compute-write trên product node ─────────────────────
         // runTransaction đảm bảo MAC tính đúng kể cả khi 2 nhập kho đồng thời
-        data class ProductUpdate(val newQty: Double, val newMac: Double, val name: String, val sku: String)
+        data class ProductUpdate(val newQty: Double, val newMac: Double, val name: String, val sku: String, val imageUrl: String?)
         var productUpdate: ProductUpdate? = null
 
         suspendCancellableCoroutine<Unit> { cont ->
@@ -147,7 +147,9 @@ class StockRepositoryImpl @Inject constructor(
                         data.child("costPrice").value = macRounded
                         val pname = data.child("name").getValue(String::class.java) ?: ""
                         val psku = data.child("sku").getValue(String::class.java) ?: ""
-                        productUpdate = ProductUpdate(newQty, macRounded, pname, psku)
+                        val pimageUrl = data.child("imageUrl").getValue(String::class.java)
+
+                        productUpdate = ProductUpdate(newQty, macRounded, pname, psku, pimageUrl)
                         return com.google.firebase.database.Transaction.success(data)
                     }
 
@@ -176,6 +178,7 @@ class StockRepositoryImpl @Inject constructor(
             "$entryPath/productId" to productId,
             "$entryPath/productName" to update.name,
             "$entryPath/productSku" to update.sku,
+            "$entryPath/productImageUrl" to update.imageUrl,
             "$entryPath/warehouseId" to warehouseId,
             "$entryPath/quantity" to quantity,
             "$entryPath/unitCostPrice" to (unitCostPrice ?: update.newMac),
@@ -206,6 +209,7 @@ class StockRepositoryImpl @Inject constructor(
         val productSnap = database.getReference(productPath).get().await()
         val productName = productSnap.child("name").getValue(String::class.java) ?: ""
         val productSku = productSnap.child("sku").getValue(String::class.java) ?: ""
+        val productImageUrl = productSnap.child("imageUrl").getValue(String::class.java)
 
         val entryId = entriesRef.push().key ?: UUID.randomUUID().toString()
         val entryPath = "stock_entries/$entryId"
@@ -219,6 +223,7 @@ class StockRepositoryImpl @Inject constructor(
             "$entryPath/productId" to productId,
             "$entryPath/productName" to productName,
             "$entryPath/productSku" to productSku,
+            "$entryPath/productImageUrl" to productImageUrl,
             "$entryPath/warehouseId" to warehouseId,
             "$entryPath/quantity" to quantity,
             "$entryPath/note" to note,
@@ -259,13 +264,16 @@ class StockRepositoryImpl @Inject constructor(
         val newQty = currentQty - quantity
 
         val productSnap = database.getReference(productPath).get().await()
-        val productName = productSnap.child("name").getValue(String::class.java) ?: ""
-        val productSku = productSnap.child("sku").getValue(String::class.java) ?: ""
+        val productName    = productSnap.child("name").getValue(String::class.java) ?: ""
+        val productSku     = productSnap.child("sku").getValue(String::class.java) ?: ""
+        val productImageUrl = productSnap.child("imageUrl").getValue(String::class.java)
+        // Snapshot giá vốn hiện tại (MAC) — dùng để tính giá trị thất thoát
+        val costPrice      = productSnap.child("costPrice").getValue(Double::class.java)
 
         val entryId = entriesRef.push().key ?: UUID.randomUUID().toString()
         val entryPath = "stock_entries/$entryId"
 
-        val updates = mapOf(
+        val updates = mutableMapOf<String, Any?>(
             "$itemPath/quantity" to newQty,
             "$itemPath/lastUpdated" to System.currentTimeMillis(),
             "$productPath/currentStock" to newQty,
@@ -274,13 +282,18 @@ class StockRepositoryImpl @Inject constructor(
             "$entryPath/productId" to productId,
             "$entryPath/productName" to productName,
             "$entryPath/productSku" to productSku,
+            "$entryPath/productImageUrl" to productImageUrl,
             "$entryPath/warehouseId" to warehouseId,
             "$entryPath/quantity" to quantity,
             "$entryPath/shrinkageReason" to reason.name,
             "$entryPath/note" to note,
-            "$entryPath/createdAt" to System.currentTimeMillis(),
-            "$entryPath/source" to "SHRINKAGE"
+            "$entryPath/source" to "SHRINKAGE",
+            "$entryPath/createdAt" to System.currentTimeMillis()
         )
+        // Ghi giá nhập (MAC) vào phiếu — chỉ ghi nếu có giá hợp lệ
+        if (costPrice != null && costPrice > 0.0) {
+            updates["$entryPath/unitCostPrice"] = costPrice
+        }
         database.reference.updateChildren(updates).await()
     }
 
@@ -345,6 +358,7 @@ private fun DataSnapshot.toStockEntry(): StockEntry? {
             productId = child("productId").getValue(String::class.java) ?: return null,
             productName = child("productName").getValue(String::class.java) ?: "",
             productSku = child("productSku").getValue(String::class.java) ?: "",
+            productImageUrl = child("productImageUrl").getValue(String::class.java),
             warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
             quantity = child("quantity").getValue(Double::class.java) ?: 0.0,
             unitCostPrice = child("unitCostPrice").getValue(Double::class.java),
@@ -358,8 +372,8 @@ private fun DataSnapshot.toStockEntry(): StockEntry? {
             createdBy = child("createdBy").getValue(String::class.java) ?: "",
             createdByName = child("createdByName").getValue(String::class.java) ?: "",
             createdAt = child("createdAt").getValue(Long::class.java) ?: 0L,
-            source = child("source").getValue(String::class.java),  // ← Fix: parse source field
-            orderId = child("orderId").getValue(String::class.java)  // ← Fix: parse orderId link
+            source = child("source").getValue(String::class.java),
+            orderId = child("orderId").getValue(String::class.java)
         )
     } catch (e: Exception) { null }
 }

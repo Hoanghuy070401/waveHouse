@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.wavehouse.domain.repository.ProductRepository
 
 data class StockEntryDetailUiState(
     val isLoading: Boolean = true,
@@ -21,7 +22,8 @@ data class StockEntryDetailUiState(
 @HiltViewModel
 class StockEntryDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val stockRepository: StockRepository
+    private val stockRepository: StockRepository,
+    private val productRepository: ProductRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StockEntryDetailUiState())
@@ -41,8 +43,23 @@ class StockEntryDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             when (val result = stockRepository.getStockEntryById(entryId)) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(isLoading = false, entry = result.data)
+                is ApiResult.Success -> {
+                    var finalEntry = result.data
+                    // Hỗ trợ backfill image đối với các record lịch sử không có link ảnh
+                    if (finalEntry.productImageUrl.isNullOrBlank()) {
+                        when (val prodResult = productRepository.getProductById(finalEntry.productId)) {
+                            is ApiResult.Success -> {
+                                if (!prodResult.data.imageUrl.isNullOrBlank()) {
+                                    finalEntry = finalEntry.copy(productImageUrl = prodResult.data.imageUrl)
+                                }
+                            }
+                            else -> Unit // Fallback if product deleted
+                        }
+                    }
+                    
+                    _uiState.update {
+                        it.copy(isLoading = false, entry = finalEntry)
+                    }
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(isLoading = false, errorMessage = result.message)

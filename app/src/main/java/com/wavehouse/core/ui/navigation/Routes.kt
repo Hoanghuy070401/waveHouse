@@ -57,6 +57,13 @@ sealed class Routes(val route: String) {
         fun createRoute(orderId: String) = "pos_payment_pending/$orderId"
     }
     data object OrderHistory : Routes("order_history")
+    data object DebtList : Routes("debt_list_screen")
+    data object DebtDetail : Routes("debt_detail_screen/{phone}") {
+        fun createRoute(phone: String) = "debt_detail_screen/$phone"
+    }
+    data object DebtPayment : Routes("debt_payment_screen/{phone}") {
+        fun createRoute(phone: String) = "debt_payment_screen/$phone"
+    }
     data object OrderDetail : Routes("order_detail/{orderId}") {
         fun createRoute(orderId: String) = "order_detail/$orderId"
     }

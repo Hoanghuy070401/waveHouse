@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.wavehouse.core.ui.components.WaveAppBar
 import com.wavehouse.core.utils.formatThousands
 import com.wavehouse.core.utils.stripFormat
 import com.wavehouse.domain.model.Product
@@ -79,29 +80,19 @@ fun StockInScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Stock In", fontWeight = FontWeight.SemiBold, fontSize = 18.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại",
-                            tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* global search focus */ }) {
-                        Icon(Icons.Filled.Search, "Tìm kiếm", tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = bgColor)
+            WaveAppBar(
+                title = "Nhập kho",
+                onBack = onNavigateBack
             )
         },
         snackbarHost = { SnackbarHost(snackbarHost) },
-        containerColor = bgColor
+        containerColor = bgColor,
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // ── Search bar ──────────────────────────────────────────────────
             item {
@@ -109,7 +100,7 @@ fun StockInScreen(
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Icon(Icons.Filled.Search, null, tint = Color(0xFF9E9E9E), modifier = Modifier.size(18.dp))
                         TextField(
@@ -286,17 +277,26 @@ private fun ProductStockCard(product: Product, onNhap: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Avatar circle with first letter
+            // Avatar circle with first letter or image
             Box(
                 modifier = Modifier.size(52.dp).clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    product.name.first().toString(),
-                    fontWeight = FontWeight.Bold, fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                if (!product.imageUrl.isNullOrBlank()) {
+                    coil3.compose.AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(
+                        product.name.firstOrNull()?.uppercase() ?: "",
+                        fontWeight = FontWeight.Bold, fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             Column(modifier = Modifier.weight(1f)) {
@@ -381,8 +381,17 @@ private fun StockInDetailSheet(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Text(product.name.first().toString(), fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+                if (!product.imageUrl.isNullOrBlank()) {
+                    coil3.compose.AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(product.name.firstOrNull()?.uppercase() ?: "", fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+                }
             }
         }
 

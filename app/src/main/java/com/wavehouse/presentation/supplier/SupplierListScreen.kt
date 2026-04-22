@@ -6,13 +6,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.wavehouse.core.ui.components.WaveAppBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.wavehouse.domain.model.Supplier
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupplierListScreen(
     onNavigateBack: () -> Unit,
@@ -32,21 +31,14 @@ fun SupplierListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Nhà cung cấp", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
+            WaveAppBar(title = "Nhà cung cấp", onBack = onNavigateBack)
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToAdd, containerColor = MaterialTheme.colorScheme.primary) {
                 Icon(Icons.Filled.Add, contentDescription = "Thêm nhà cung cấp")
             }
-        }
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             // Search Bar

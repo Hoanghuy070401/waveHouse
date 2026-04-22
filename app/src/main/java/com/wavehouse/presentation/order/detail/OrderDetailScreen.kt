@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.wavehouse.core.ui.components.WaveAppBar
 import com.wavehouse.core.ui.theme.PrimaryGreen
 import com.wavehouse.core.utils.toDateTimeString
 import com.wavehouse.core.utils.toVndString
@@ -41,7 +42,6 @@ private val SurfaceContainerHigh  = Color(0xFFDDE5DB) // zebra-even item bg
 private val OnSurface             = Color(0xFF171D17) // text đen hữu cơ
 private val OnSurfaceVariant      = Color(0xFF3D4E39) // label gray
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderDetailScreen(
     onNavigateBack: () -> Unit,
@@ -49,31 +49,12 @@ fun OrderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // topBar cố định — KHÔNG cuộn cùng content
     Scaffold(
         containerColor = SurfaceBase,
         topBar = {
-            val order = uiState.order
-            if (order != null) {
-                OrderDetailHeader(order = order, onBack = onNavigateBack)
-            } else {
-                // Placeholder khi đang load
-                Surface(color = SurfaceBase) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại",
-                                tint = OnSurface)
-                        }
-                    }
-                }
-            }
-        }
+            WaveAppBar(title = "Chi tiết đơn hàng", onBack = onNavigateBack)
+        },
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)
     ) { padding ->
         val order = uiState.order
         when {
@@ -106,56 +87,6 @@ fun OrderDetailScreen(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// Fixed TopAppBar — nền SurfaceBase, không có shadow
-// ══════════════════════════════════════════════════════════════════
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun OrderDetailHeader(order: Order, onBack: () -> Unit) {
-    val accent = if (order.status == OrderStatus.CANCELLED)
-        MaterialTheme.colorScheme.error else PrimaryGreen
-
-    // Dùng nền SurfaceBase giống trang — không tạo "bar" nổi bật
-    Surface(color = SurfaceBase, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Back arrow
-            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Quay lại",
-                    tint = OnSurface,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            // Title + order ID
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = "Order Details",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = OnSurface
-                )
-                Text(
-                    text = "#ORD-${order.id.takeLast(8).uppercase()}",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = accent
-                )
-            }
-
-            StatusPill(status = order.status, accent = accent)
-        }
-    }
-}
-
-// ══════════════════════════════════════════════════════════════════
 // Scrollable body
 // ══════════════════════════════════════════════════════════════════
 
@@ -168,19 +99,48 @@ private fun OrderDetailBody(order: Order, itemImages: Map<String, String?>) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .padding(top = 8.dp, bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(top = 16.dp, bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Order ID and Status Pill at the top of the body
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Order ID",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "#ORD-${order.id.takeLast(8).uppercase()}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = accent
+                )
+            }
+            StatusPill(status = order.status, accent = accent)
+        }
+
+        // ─ Spacing trước info cards ───────────────────────────
+        Spacer(Modifier.height(4.dp))
+
         // ─ Info cards ───────────────────────────────────────────
-        HighlightInfoCard(label = "CUSTOMER", value = "Khách lẻ",
+        HighlightInfoCard(label = "KHÁCH HÀNG",
+            value = order.customerName?.takeIf { it.isNotBlank() } ?: "Khách lẻ vãng lai",
             imageUrl = CUSTOMER_IMAGE_URL)
-        HighlightInfoCard(label = "PAYMENT METHOD", value = order.paymentMethod.label,
+        HighlightInfoCard(label = "THANH TOÁN", value = order.paymentMethod.label,
             imageUrl = PAYMENT_IMAGE_URL)
-        HighlightInfoCard(label = "ORDER TIME", value = order.createdAt.toDateTimeString(),
+        HighlightInfoCard(label = "THỜI GIAN", value = order.createdAt.toDateTimeString(),
             imageUrl = TIME_IMAGE_URL)
         if (order.createdByName.isNotBlank()) {
-            HighlightInfoCard(label = "SALES STAFF", value = order.createdByName,
+            HighlightInfoCard(label = "NHÂN VIÊN BÁN", value = order.createdByName,
                 imageUrl = STAFF_IMAGE_URL)
+        }
+        if (!order.note.isNullOrBlank()) {
+            HighlightInfoCard(label = "GHI CHÚ", value = order.note!!, imageUrl = null)
         }
 
         // ─ Spacing trước product list ────────────────────────────
@@ -341,7 +301,10 @@ private fun ProductListItem(item: OrderItem, index: Int, imageUrl: String?) {
 @Composable
 private fun OrderTotalsSection(order: Order, accent: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SummaryRow("Tạm tính (Subtotal)", order.items.sumOf { it.lineTotal }.toVndString())
+        SummaryRow("Tạm tính (Subtotal)", order.subtotal.toVndString())
+        if (order.discountAmount > 0) {
+            SummaryRow("Giảm giá", "-${order.discountAmount.toVndString()}")
+        }
         SummaryRow("Thuế (VAT 0%)", "0đ")
 
         HorizontalDivider(
@@ -369,6 +332,18 @@ private fun OrderTotalsSection(order: Order, accent: Color) {
                 color = accent
             )
         }
+        
+        if (order.debtAmount > 0) {
+            SummaryRow("Đã thanh toán (Thực thu)", order.paidAmount.toVndString())
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Còn nợ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                Text(order.debtAmount.toVndString(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+            }
+        }
     }
 }
 
@@ -395,6 +370,7 @@ private fun StatusPill(status: OrderStatus, accent: Color) {
         OrderStatus.PAID      -> "THÀNH CÔNG"
         OrderStatus.CANCELLED -> "ĐÃ HUỶ"
         OrderStatus.PENDING   -> "CHỜ TT"
+        OrderStatus.DEBT      -> "CÒN NỢ"
     }
     // Solid fill + white text
     Surface(shape = CircleShape, color = accent, contentColor = Color.White) {

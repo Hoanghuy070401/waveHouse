@@ -108,21 +108,53 @@ fun PosScreen(
     }
 
     if (uiState.showCashConfirmDialog) {
+        var inputStr by remember { mutableStateOf("") }
+        val isQr = uiState.selectedPaymentMethod == PaymentMethod.QR
+        val total = uiState.cartTotal
+        val typedValue = inputStr.replace(Regex("[^0-9]"), "").toDoubleOrNull() ?: total
+        val debt = (total - typedValue).coerceAtLeast(0.0)
+
         AlertDialog(
             onDismissRequest = { viewModel.dismissCashConfirmDialog() },
-            title = { Text("Xác nhận thanh toán tiền mặt") },
+            title = { Text(if (isQr) "Xác nhận thanh toán QR" else "Thanh toán Tiền mặt", color = PrimaryGreen) },
             text = {
-                Text("Bạn đã nhận đủ tiền mặt từ khách chưa?")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Tổng hóa đơn:", style = MaterialTheme.typography.bodyLarge)
+                        Text(total.toVnd(), fontWeight = FontWeight.Bold)
+                    }
+                    OutlinedTextField(
+                        value = inputStr,
+                        onValueChange = { inputStr = it },
+                        label = { Text("Khách thanh toán") },
+                        placeholder = { Text(total.toVnd()) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryGreen,
+                            focusedLabelColor = PrimaryGreen
+                        )
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Ghi nợ:", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+                        Text(debt.toVnd(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                    }
+                }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissCashConfirmDialog() }) {
-                    Text("Hủy")
+                    Text("Hủy", color = OnSurfaceVariant)
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = viewModel::confirmCashCheckout,
-                    enabled = !uiState.isCheckingOut
+                    onClick = {
+                        if (isQr) viewModel.startQrCheckout(typedValue)
+                        else viewModel.confirmCashCheckout(typedValue)
+                    },
+                    enabled = !uiState.isCheckingOut,
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
                 ) {
                     if (uiState.isCheckingOut) {
                         CircularProgressIndicator(
@@ -131,7 +163,7 @@ fun PosScreen(
                             color = Color.White
                         )
                     } else {
-                        Text("Hoàn tất đơn")
+                        Text(if (isQr) "Lấy mã QR" else "Hoàn tất")
                     }
                 }
             }
@@ -344,45 +376,56 @@ fun PosScreen(
 
 // ─── Top Bar ────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PosTopBar(navController: NavController) {
-    TopAppBar(
-        windowInsets = androidx.compose.foundation.layout.WindowInsets(0),
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(SurfaceHighest)
-                ) {
-                    AsyncImage(
-                        model = "https://lh3.googleusercontent.com/aida-public/AB6AXuCg6Sx_s2wsnXFYcoEhCUhZMB9PJT7BRAZn1Pv7dUFx-rie4xmR-fbW6DMvcpGXyxzf9FvvCYkCuKpuz4wHnoJKsHer-p4qw8ihioXKdc5GlwmVMZ7Y35vAacLau-E592QJpFRQ5-zkd_5D1Nf6RKYUJgS22h6yL_KcUqYf9A4qrU_aWWGsxkejHHWbmj4nbxWC1PEiPdwHuXR54TOrKe11rzN5m6GU3BUz-7igYL3vYfOksJYKcLopRjlOZgu50EJxJ6IGHv6RsG8",
-                        contentDescription = "User",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                Text(
-                    "FreshStock",
-                    fontWeight = FontWeight.Black,
-                    color = PrimaryGreen,
-                    fontSize = 24.sp,
-                    letterSpacing = (-0.5).sp
+    Surface(
+        color = BgSurface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(SurfaceHighest)
+            ) {
+                AsyncImage(
+                    model = "https://lh3.googleusercontent.com/aida-public/AB6AXuCg6Sx_s2wsnXFYcoEhCUhZMB9PJT7BRAZn1Pv7dUFx-rie4xmR-fbW6DMvcpGXyxzf9FvvCYkCuKpuz4wHnoJKsHer-p4qw8ihioXKdc5GlwmVMZ7Y35vAacLau-E592QJpFRQ5-zkd_5D1Nf6RKYUJgS22h6yL_KcUqYf9A4qrU_aWWGsxkejHHWbmj4nbxWC1PEiPdwHuXR54TOrKe11rzN5m6GU3BUz-7igYL3vYfOksJYKcLopRjlOZgu50EJxJ6IGHv6RsG8",
+                    contentDescription = "User",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
-        },
-        actions = {
+
+            // Brand name
+            Text(
+                "FreshStock",
+                fontWeight = FontWeight.Black,
+                color = PrimaryGreen,
+                fontSize = 24.sp,
+                letterSpacing = (-0.5).sp,
+                modifier = Modifier.weight(1f)
+            )
+
+            // Actions
             IconButton(onClick = { /* Notifications */ }) {
                 Icon(Icons.Filled.Notifications, "Thông báo", tint = OnSurface)
             }
-            IconButton(onClick = { navController.navigate(com.wavehouse.core.ui.navigation.Routes.OrderHistory.route) }) {
-                Icon(Icons.Filled.Receipt, "Lịch sử bán hàng", tint = OnSurface)
+            IconButton(onClick = {
+                navController.navigate(com.wavehouse.core.ui.navigation.Routes.DebtList.route)
+            }) {
+                Icon(Icons.Filled.AccountBalanceWallet, "Công nợ", tint = OnSurface)
             }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = BgSurface)
-    )
+        }
+    }
 }
 
 // ─── Search Field ────────────────────────────────────────────────────────────
@@ -568,6 +611,31 @@ private fun CartItemRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Thumbnail Image
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(OutlineVariant.copy(alpha = 0.2f)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (!cartItem.product.imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = cartItem.product.imageUrl,
+                    contentDescription = cartItem.product.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    cartItem.product.name.firstOrNull()?.uppercase() ?: "",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = PrimaryGreen.copy(alpha = 0.6f)
+                )
+            }
+        }
+
         // Left: name + unit price + line total
         Column(modifier = Modifier.weight(1f)) {
             Text(

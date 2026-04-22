@@ -1,5 +1,7 @@
 package com.wavehouse.presentation.product.addedit
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -11,8 +13,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.AddPhotoAlternate
@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.wavehouse.core.ui.components.WaveAppBar
 import com.wavehouse.core.utils.formatThousands
 import com.wavehouse.core.utils.stripFormat
 
@@ -110,38 +111,9 @@ fun AddEditProductScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (uiState.isEditMode) "Chỉnh sửa sản phẩm" else "Thêm hàng mới",
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryColor,
-                        fontSize = 24.sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại", tint = PrimaryColor)
-                    }
-                },
-                actions = {
-                    // Fake avatar based on design
-                    Box(
-                        Modifier
-                            .padding(end = 16.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceContainerHighest)
-                    ) {
-                        AsyncImage(
-                            model = "https://lh3.googleusercontent.com/aida-public/AB6AXuCHsYaToOPicscLojJ5DGzaFyr1lxaOeXw1TaAyOwDzDvc_tAe5zgNt4nvfULn_5MghqyPbaRYCTD7YwiF6FEmnCTSX0brPWuXv8b5gje_Z258SIpOzlo7XyT0vW-uBG-HcaZ1RyIqKmNCsbAoOWxKyktzFEpmMNXk9Fapu0Q2o7v7boOlaSfBrtH-7Y5Hyb7JE_y82poLeus2eddnBKQhmsRbOvWEv0o4HqiPV7xZ7Rf70VMBbDPkXInoP418B1PrvH0l-Te8PAHI",
-                            contentDescription = "User",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceContainerLow)
+            WaveAppBar(
+                title = if (uiState.isEditMode) "Chỉnh sửa sản phẩm" else "Thêm hàng mới",
+                onBack = onNavigateBack
             )
         },
         snackbarHost = { SnackbarHost(snackbarHost) },
@@ -632,19 +604,11 @@ fun AddEditProductScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AccessDeniedContent(onNavigateBack: () -> Unit) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Không có quyền") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                }
-            )
+            WaveAppBar(title = "Không có quyền", onBack = onNavigateBack)
         }
     ) { padding ->
         Box(

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, .headline-font {
+            font-family: 'Work Sans', sans-serif;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "error": "#ba1a1a",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed": "#2b1700",
+                      "secondary": "#4e6073",
+                      "primary-container": "#27ae60",
+                      "inverse-on-surface": "#ecf3e9",
+                      "primary-fixed": "#7efba4",
+                      "surface": "#f4fbf1",
+                      "on-secondary-container": "#526478",
+                      "secondary-fixed-dim": "#b5c8df",
+                      "on-tertiary-fixed-variant": "#663e00",
+                      "tertiary-fixed-dim": "#ffb961",
+                      "on-primary-container": "#00391a",
+                      "surface-container-highest": "#dde5db",
+                      "on-background": "#171d17",
+                      "tertiary-container": "#d58700",
+                      "surface-variant": "#dde5db",
+                      "surface-container-low": "#eff6ec",
+                      "on-error-container": "#93000a",
+                      "inverse-surface": "#2b322c",
+                      "primary": "#006d37",
+                      "on-tertiary-container": "#472a00",
+                      "secondary-fixed": "#d1e4fb",
+                      "surface-tint": "#006d37",
+                      "inverse-primary": "#61de8a",
+                      "surface-container": "#e9f0e6",
+                      "on-primary-fixed-variant": "#005228",
+                      "outline-variant": "#bccabc",
+                      "on-surface": "#171d17",
+                      "tertiary-fixed": "#ffddb9",
+                      "primary-fixed-dim": "#61de8a",
+                      "surface-bright": "#f4fbf1",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-fixed-variant": "#36485b",
+                      "on-error": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "surface-dim": "#d5dcd2",
+                      "outline": "#6d7a6e",
+                      "on-primary": "#ffffff",
+                      "tertiary": "#865300",
+                      "on-secondary-fixed": "#091d2e",
+                      "secondary-container": "#cfe2f9",
+                      "surface-container-high": "#e3eae0",
+                      "on-surface-variant": "#3d4a3f",
+                      "on-primary-fixed": "#00210c",
+                      "background": "#f4fbf1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "2xl": "1rem",
+                      "3xl": "1.5rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Work Sans"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          }
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<nav class="bg-[#f4fbf1] dark:bg-stone-950 flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<button class="text-[#006d37] dark:text-[#27ae60] hover:bg-[#dde5db] dark:hover:bg-stone-800 transition-colors p-2 rounded-full active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-['Work_Sans'] font-bold text-xl tracking-tight text-[#006d37] dark:text-[#27ae60]">Order Details</h1>
+</div>
+<button class="text-[#006d37] dark:text-[#27ae60] hover:bg-[#dde5db] dark:hover:bg-stone-800 transition-colors p-2 rounded-full active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</nav>
+<main class="max-w-4xl mx-auto px-6 pt-8 space-y-8">
+<!-- Header Section: ID and Status -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<p class="text-on-surface-variant font-medium mb-1">Chi tiết nhập hàng</p>
+<h2 class="text-4xl font-black headline-font tracking-tighter text-on-surface">Order ID #INB-9284</h2>
+</div>
+<div class="inline-flex items-center px-4 py-2 bg-primary-container/10 text-primary border border-primary/20 rounded-full font-bold text-sm">
+<span class="w-2 h-2 rounded-full bg-primary mr-2"></span>
+                Đã nhập
+            </div>
+</section>
+<!-- Bento Grid Info Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Supplier Card -->
+<div class="md:col-span-2 bg-surface-container-low rounded-3xl p-8 transition-all hover:bg-surface-container">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-sm font-semibold text-outline mb-4 uppercase tracking-widest">Nhà cung cấp</p>
+<h3 class="text-3xl font-bold headline-font text-on-surface mb-2">Đà Lạt Farm Co.</h3>
+<p class="text-on-surface-variant max-w-xs">Chuyên cung cấp rau củ quả hữu cơ tiêu chuẩn VietGAP từ cao nguyên Đà Lạt.</p>
+</div>
+<div class="bg-surface-container-highest rounded-2xl w-16 h-16 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">potted_plant</span>
+</div>
+</div>
+</div>
+<!-- Date Card -->
+<div class="bg-primary text-on-primary rounded-3xl p-8 flex flex-col justify-between shadow-xl">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-3xl">calendar_today</span>
+<span class="text-xs font-bold bg-on-primary/20 px-2 py-1 rounded">2023</span>
+</div>
+<div>
+<p class="text-on-primary/80 font-medium">Ngày nhập kho</p>
+<p class="text-3xl font-black headline-font">24/10</p>
+</div>
+</div>
+</div>
+<!-- Order Items Section -->
+<section class="space-y-4">
+<h3 class="text-xl font-bold headline-font px-2">Danh sách sản phẩm</h3>
+<div class="space-y-3">
+<!-- Item 1 -->
+<div class="bg-surface-container-highest rounded-3xl p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:shadow-lg transition-all duration-300">
+<div class="w-24 h-24 rounded-2xl overflow-hidden bg-white shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close-up of fresh green napa cabbage leaves with crisp texture and dewdrops" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChPn3cpwmVoXcXSC3hcXxy_W5nYY_D8LXJb96MpcQ1P7B6Y1QYdJbu1fcNKBMwIBymSQNbthUF7d60_qssYuBGaEB20Bex2GifC3L16hrd7AA98J4C-9Syd1eGIAjiNfh2wDAMGR7kJECLI8jUC0MwZ7DfIi40L6bX3L0jUFRs2oS7g4STveIwxj0fPnudySshp1YVIm5sLALs493oqQz92B4gw8PIFzH3FY48imT-1x8wd6479O9MfT00rlZpfcmjUGz1IuFtkBY"/>
+</div>
+<div class="flex-grow">
+<h4 class="text-xl font-bold text-on-surface">Cải thảo</h4>
+<p class="text-on-surface-variant font-medium">Đơn giá: 5.000đ / kg</p>
+</div>
+<div class="flex items-end md:items-center gap-8">
+<div class="text-right">
+<p class="text-xs font-bold text-outline uppercase">Số lượng</p>
+<p class="text-2xl font-black headline-font text-primary">100kg</p>
+</div>
+<div class="text-right min-w-[120px]">
+<p class="text-xs font-bold text-outline uppercase">Thành tiền</p>
+<p class="text-2xl font-black headline-font">500.000đ</p>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="bg-surface-container-low rounded-3xl p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:shadow-lg transition-all duration-300">
+<div class="w-24 h-24 rounded-2xl overflow-hidden bg-white shrink-0">
+<img class="w-full h-full object-cover" data-alt="Fresh vibrant orange carrots with green tops arranged neatly on a rustic wooden background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5UkM6X2P09Cv6Iyzm465hDC2LjCfB4vOdGKAIhBsvmcAPePsj6MtbCicUbp55F46kxsDeQyWqGVeFyYBAFCN4YdK74IRlhUW_jil1QYa6mztyl4nVTjA9AyKrMl6B9ftg3nBW9Nj4pEDkTy7MowiuNBANWxv5mcUrlWW7SmVjlNfIqe00U-_Lfnu9A2tKT7Aid27AN88gTWl0pEORnapoS27MavPpSCYQvbVUuMGotE9zD32LpvO5m8S6JYpvDRPhFw9vaLFfFfQ"/>
+</div>
+<div class="flex-grow">
+<h4 class="text-xl font-bold text-on-surface">Cà rốt</h4>
+<p class="text-on-surface-variant font-medium">Đơn giá: 8.000đ / kg</p>
+</div>
+<div class="flex items-end md:items-center gap-8">
+<div class="text-right">
+<p class="text-xs font-bold text-outline uppercase">Số lượng</p>
+<p class="text-2xl font-black headline-font text-primary">50kg</p>
+</div>
+<div class="text-right min-w-[120px]">
+<p class="text-xs font-bold text-outline uppercase">Thành tiền</p>
+<p class="text-2xl font-black headline-font">400.000đ</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Summary & Notes -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+<!-- Notes -->
+<div class="md:col-span-3 bg-tertiary-fixed rounded-3xl p-8 relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4 text-on-tertiary-fixed">
+<span class="material-symbols-outlined">description</span>
+<p class="font-bold uppercase tracking-wider text-sm">Ghi chú</p>
+</div>
+<p class="text-2xl font-medium text-on-tertiary-fixed leading-relaxed">"Hàng tươi, đã kiểm định."</p>
+</div>
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-8xl text-on-tertiary-fixed/10 rotate-12">verified</span>
+</div>
+<!-- Total Price -->
+<div class="md:col-span-2 bg-inverse-surface text-inverse-on-surface rounded-3xl p-8 flex flex-col justify-center">
+<p class="text-inverse-on-surface/60 font-medium mb-1">Tổng cộng đơn hàng</p>
+<p class="text-5xl font-black headline-font text-primary-fixed">900.000đ</p>
+<div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+<span class="text-xs font-bold uppercase text-white/40">Thanh toán</span>
+<span class="text-sm font-bold text-primary-fixed">Tiền mặt</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+</main>
+<!-- Bottom Navigation Bar (Hidden on Web) -->
+</body></html>

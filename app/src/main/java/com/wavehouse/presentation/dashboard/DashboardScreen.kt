@@ -30,7 +30,6 @@ import com.wavehouse.domain.model.StockEntry
 import com.wavehouse.domain.model.StockEntryType
 import com.wavehouse.domain.model.UserRole
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     navController: NavController,
@@ -42,8 +41,18 @@ fun DashboardScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
+            Surface(
+                color = MaterialTheme.colorScheme.background,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     Column {
                         Text(
                             text = if (uiState.warehouseName.isNotBlank())
@@ -53,25 +62,20 @@ fun DashboardScreen(
                         )
                         Text(
                             text = when (uiState.userRole) {
-                                UserRole.ADMIN -> "Chủ kho • Toàn quyền"
-                                UserRole.WAREHOUSE -> "Thủ kho"
+                                UserRole.ADMIN      -> "Chủ kho • Toàn quyền"
+                                UserRole.WAREHOUSE  -> "Thủ kho"
                                 UserRole.ACCOUNTANT -> "Kế toán"
-                                UserRole.STAFF -> "Nhân viên"
+                                UserRole.STAFF      -> "Nhân viên"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                },
-                actions = {
                     IconButton(onClick = { navController.navigate(Routes.Account.route) }) {
                         Icon(Icons.Filled.Person, contentDescription = "Tài khoản")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
+                }
+            }
         }
     ) { paddingValues ->
         if (uiState.isLoading) {

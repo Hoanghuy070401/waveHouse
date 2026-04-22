@@ -117,6 +117,9 @@ interface OrderRepository {
     suspend fun cancelOrder(orderId: String): ApiResult<Unit>
 
     fun getOrders(warehouseId: String, limit: Int = 50): Flow<ApiResult<List<Order>>>
+    fun getDebtOrders(warehouseId: String): Flow<ApiResult<List<Order>>>
+
+    suspend fun payDebt(orderId: String, paymentAmount: Double): ApiResult<Unit>
 
     suspend fun getOrderById(orderId: String): ApiResult<Order>
 
