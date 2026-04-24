@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.wavehouse.core.utils.toVndString
+import com.wavehouse.domain.model.PaymentMethod
 
 // Max credit limit assumed for progress bar display
 private const val CREDIT_LIMIT = 20_000_000.0
@@ -47,7 +48,7 @@ fun DebtPaymentScreen(
 
     var paymentAmountStr by remember { mutableStateOf("") }
     val paymentAmount = paymentAmountStr.replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
-    var selectedMethod by remember { mutableStateOf("CASH") }
+    var selectedMethod by remember { mutableStateOf(PaymentMethod.CASH) }
     var notes by remember { mutableStateOf("") }
 
     val remainingDebt = (uiState.totalDebt - paymentAmount).coerceAtLeast(0.0)
@@ -291,15 +292,15 @@ fun DebtPaymentScreen(
                             PaymentMethodButton(
                                 icon = Icons.Filled.Payments,
                                 text = "Tiền mặt",
-                                isSelected = selectedMethod == "CASH",
-                                onClick = { selectedMethod = "CASH" },
+                                isSelected = selectedMethod == PaymentMethod.CASH,
+                                onClick = { selectedMethod = PaymentMethod.CASH },
                                 modifier = Modifier.weight(1f)
                             )
                             PaymentMethodButton(
                                 icon = Icons.Filled.AccountBalance,
                                 text = "Chuyển khoản",
-                                isSelected = selectedMethod == "TRANSFER",
-                                onClick = { selectedMethod = "TRANSFER" },
+                                isSelected = selectedMethod == PaymentMethod.QR,
+                                onClick = { selectedMethod = PaymentMethod.QR },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -433,7 +434,7 @@ fun DebtPaymentScreen(
 
             // ── Confirm Button ────────────────────────────────────────────────
             Button(
-                onClick = { viewModel.submitPayment(paymentAmount) },
+                onClick = { viewModel.submitPayment(paymentAmount, selectedMethod, notes) },
                 enabled = !uiState.isPaying && paymentAmount > 0,
                 modifier = Modifier
                     .fillMaxWidth()

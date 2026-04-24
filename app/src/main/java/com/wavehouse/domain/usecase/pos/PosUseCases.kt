@@ -85,6 +85,7 @@ class CheckoutUseCase @Inject constructor(
             totalAmount = totalAmount,
             paidAmount = finalPaidAmount,
             debtAmount = debtAmount,
+            wasDebt = debtAmount > 0, // Đánh dấu vĩnh viễn — dùng để query lịch sử sau khi PAID
             paymentMethod = paymentMethod,
             status = status,
             createdBy = createdBy,
@@ -118,8 +119,28 @@ class CancelOrderUseCase @Inject constructor(
 class PayDebtUseCase @Inject constructor(
     private val orderRepository: OrderRepository
 ) {
-    suspend operator fun invoke(orderId: String, paymentAmount: Double): ApiResult<Unit> {
-        return orderRepository.payDebt(orderId, paymentAmount)
+    suspend operator fun invoke(
+        orderId: String,
+        paymentAmount: Double,
+        warehouseId: String,
+        customerPhone: String,
+        customerName: String?,
+        paymentMethod: PaymentMethod,
+        note: String?,
+        createdBy: String,
+        createdByName: String
+    ): ApiResult<Unit> {
+        return orderRepository.payDebt(
+            orderId = orderId,
+            paymentAmount = paymentAmount,
+            warehouseId = warehouseId,
+            customerPhone = customerPhone,
+            customerName = customerName,
+            paymentMethod = paymentMethod,
+            note = note,
+            createdBy = createdBy,
+            createdByName = createdByName
+        )
     }
 }
 

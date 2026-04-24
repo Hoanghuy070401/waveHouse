@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.wavehouse.core.utils.toVndString
+import com.wavehouse.domain.model.DebtTransaction
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -105,7 +106,7 @@ fun DebtDetailScreen(
                 }
 
                 item {
-                    DebtPaymentTimeline(uiState.orders)
+                    DebtPaymentTimeline(uiState.transactions)
                 }
             }
         }
@@ -410,32 +411,27 @@ private data class PaymentHistoryItem(
 )
 
 @Composable
-private fun DebtPaymentTimeline(orders: List<com.wavehouse.domain.model.Order>) {
-    // Simulate payment history from partially-paid orders (paidAmount > 0)
-    val paidOrders = orders.filter { it.paidAmount > 0 }
+private fun DebtPaymentTimeline(transactions: List<DebtTransaction>) {
     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-    // Build timeline items from orders that have been partially paid
-    val timelineItems = if (paidOrders.isNotEmpty()) {
-        paidOrders.mapIndexed { idx, order ->
-            val isRecent = idx == 0
-            val dateLabel = if (isRecent) {
-                val diffDays = (System.currentTimeMillis() - order.createdAt) / (1000 * 60 * 60 * 24)
-                if (diffDays == 0L) "Hôm nay"
-                else if (diffDays == 1L) "Hôm qua"
-                else sdf.format(Date(order.createdAt))
-            } else sdf.format(Date(order.createdAt))
-
+    val timelineItems: List<PaymentHistoryItem> = if (transactions.isNotEmpty()) {
+        transactions.mapIndexed { idx, txn ->
+            val diffDays = (System.currentTimeMillis() - txn.createdAt) / (1000 * 60 * 60 * 24)
+            val dateLabel = when {
+                diffDays == 0L -> "Hôm nay"
+                diffDays == 1L -> "Hôm qua"
+                else -> sdf.format(Date(txn.createdAt))
+            }
             PaymentHistoryItem(
                 label = dateLabel,
-                description = "Đã trả (${order.paymentMethod.label})",
-                amount = "+${order.paidAmount.toVndString()}",
-                note = "Đơn #${order.id.take(6).uppercase()}",
-                isRecent = isRecent
+                description = "Đã trả (${txn.paymentMethod.label})",
+                amount = "+${txn.amount.toVndString()}",
+                note = txn.note?.takeIf { it.isNotBlank() }
+                    ?: "Đơn #${txn.orderId.take(6).uppercase()}",
+                isRecent = idx == 0
             )
         }
     } else {
-        // Fallback if no payment history yet
         listOf(
             PaymentHistoryItem(
                 label = "Chưa có",

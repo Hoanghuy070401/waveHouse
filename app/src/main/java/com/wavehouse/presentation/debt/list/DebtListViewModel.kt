@@ -6,7 +6,6 @@ import com.wavehouse.core.network.ApiResult
 import com.wavehouse.domain.model.Order
 import com.wavehouse.domain.repository.OrderRepository
 import com.wavehouse.domain.usecase.auth.GetCurrentUserUseCase
-import com.wavehouse.domain.usecase.pos.PayDebtUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,7 +17,8 @@ data class CustomerDebt(
     val totalDebt: Double,
     val lastUpdate: Long,
     val isOverdue: Boolean,
-    val orders: List<Order>
+    val orders: List<Order>,
+    val isFullyPaid: Boolean = false  // true = từng nợ nhưng đã trả hết toàn bộ
 )
 
 data class DebtListUiState(
@@ -47,6 +47,13 @@ class DebtListViewModel @Inject constructor(
         loadDebts()
     }
 
+    /** Dọn dẹp ngầm: reset wasDebt=false cho đơn thanh toán > 3 ngày. */
+    private fun triggerCleanup(warehouseId: String) {
+        viewModelScope.launch {
+            orderRepository.cleanupExpiredWasDebtOrders(warehouseId, olderThanDays = 3)
+        }
+    }
+
     private fun loadDebts() {
         viewModelScope.launch {
             val user = getCurrentUserUseCase()
@@ -54,6 +61,10 @@ class DebtListViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, error = "Chưa đăng nhập") }
                 return@launch
             }
+
+            // Chạy cleanup trước khi bắt đầu observe — đảm bảo Firebase đã sạch
+            // Cleanup chạy song song, không block UI
+            triggerCleanup(user.warehouseId)
 
             orderRepository.getDebtOrders(user.warehouseId).collect { result ->
                 when (result) {
@@ -73,59 +84,82 @@ class DebtListViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
-        applyFilters()
-    }
-    
-    fun onFilterTabChanged(tab: Int) {
-        _uiState.update { it.copy(filterTab = tab) }
-        applyFilters()
+        applyFilters(query = query, tab = _uiState.value.filterTab)
     }
 
-    private fun applyFilters() {
-        val q = _uiState.value.searchQuery.lowercase().trim()
-        val tab = _uiState.value.filterTab
-        
-        // Group orders by customer (defaulting missing info to "Khách lẻ")
+    fun onFilterTabChanged(tab: Int) {
+        _uiState.update { it.copy(filterTab = tab) }
+        applyFilters(query = _uiState.value.searchQuery, tab = tab)
+    }
+
+    private fun applyFilters(
+        query: String = _uiState.value.searchQuery,
+        tab: Int = _uiState.value.filterTab
+    ) {
+        val q = query.lowercase().trim()
+
+        // Group ALL debt-related orders (active + completed) by customer
         val groups = _allOrders.value.groupBy { it.customerPhone ?: "Khách lẻ" }
-        
-        val overdueThreshold = System.currentTimeMillis() - 15L * 24 * 60 * 60 * 1000 // 15 days
-        
+
+        val overdueThreshold = System.currentTimeMillis() - 15L * 24 * 60 * 60 * 1000
+
         var customers = groups.map { (phone, orders) ->
-            val name = orders.firstOrNull { !it.customerName.isNullOrBlank() }?.customerName ?: "Khách hàng"
-            val total = orders.sumOf { it.debtAmount }
+            val name = orders.firstOrNull { !it.customerName.isNullOrBlank() }?.customerName
+                ?: if (phone == "Khách lẻ") "Khách hàng vãng lai" else "Khách hàng"
+            // Chỉ tính nợ hiện còn lại (DEBT orders)
+            val total = orders
+                .filter { it.status == com.wavehouse.domain.model.OrderStatus.DEBT }
+                .sumOf { it.debtAmount }
             val lastUpdate = orders.maxOfOrNull { it.createdAt } ?: 0L
-            val isOverdue = orders.any { it.createdAt < overdueThreshold && it.debtAmount > 0 }
-            
+            val hasActiveDebt = total > 0
+            val isOverdue = hasActiveDebt && orders.any {
+                it.status == com.wavehouse.domain.model.OrderStatus.DEBT &&
+                it.createdAt < overdueThreshold
+            }
+            val isFullyPaid = run {
+                // Khách từng có nợ VÀ đã trả hết toàn bộ
+                val allCleared = orders.all { it.status != com.wavehouse.domain.model.OrderStatus.DEBT }
+                val hadDebt = orders.any { it.wasDebt }
+                // Lấy timestamp gần nhất khi khách trả xong nợ — đối chiếu với 3 ngày
+                val lastPaidAt = orders
+                    .filter { it.wasDebt && it.status != com.wavehouse.domain.model.OrderStatus.DEBT }
+                    .mapNotNull { it.paidAt }
+                    .maxOrNull() ?: 0L
+                val threeDaysAgo = System.currentTimeMillis() - 3L * 24 * 60 * 60 * 1000
+                // Chỉ hiển thị nếu trả nợ trong vòng 3 ngày gần nhất
+                allCleared && hadDebt && lastPaidAt >= threeDaysAgo
+            }
+
             CustomerDebt(
                 phone = phone,
-                name = if (phone == "Khách lẻ") "Khách hàng vãng lai" else name,
+                name = name,
                 totalDebt = total,
                 lastUpdate = lastUpdate,
                 isOverdue = isOverdue,
-                orders = orders
+                orders = orders,
+                isFullyPaid = isFullyPaid
             )
         }
-        
-        // Filter out those with 0 debt (unless we want to show paid off)
-        customers = customers.filter { it.totalDebt > 0 }
-        
+
         // Apply search
         if (q.isNotEmpty()) {
-            customers = customers.filter { 
-                it.name.lowercase().contains(q) || it.phone.contains(q) 
+            customers = customers.filter {
+                it.name.lowercase().contains(q) || it.phone.contains(q)
             }
         }
-        
-        // Apply tab
+
+        // Apply tab filter
         customers = when (tab) {
-            1 -> customers.filter { it.isOverdue }
-            2 -> emptyList() // Đã thu xong (Logic will require tracking paid history. Currently not available)
-            else -> customers
+            1 -> customers.filter { it.isOverdue && !it.isFullyPaid } // Quá hạn
+            2 -> customers.filter { it.isFullyPaid }                  // Đã thu xong
+            else -> customers.filter { it.totalDebt > 0 }             // Tất cả (chỉ khách còn nợ)
         }
-        
-        // Sort: Overdue first, then by last update
-        customers = customers.sortedWith(compareByDescending<CustomerDebt> { it.isOverdue }.thenByDescending { it.lastUpdate })
-        
+
+        // Sort: overdue first, then most recent
+        customers = customers.sortedWith(
+            compareByDescending<CustomerDebt> { it.isOverdue }.thenByDescending { it.lastUpdate }
+        )
+
         _uiState.update { it.copy(customers = customers) }
     }
 }

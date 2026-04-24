@@ -23,7 +23,11 @@ data class DebtPaymentUiState(
     val isLoading: Boolean = true,
     val isPaying: Boolean = false,
     val isPaymentSuccess: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // User context — loaded once, needed for DebtTransaction
+    val warehouseId: String = "",
+    val createdById: String = "",
+    val createdByName: String = ""
 ) {
     val totalDebt: Double get() = orders.sumOf { it.debtAmount }
 }
@@ -53,16 +57,24 @@ class DebtPaymentViewModel @Inject constructor(
                 return@launch
             }
 
+            // Cache user context for use in submitPayment
+            _uiState.update { it.copy(
+                warehouseId = user.warehouseId,
+                createdById = user.id,
+                createdByName = user.name
+            )}
+
             orderRepository.getDebtOrders(user.warehouseId).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
-                        val customerOrders = result.data.filter { 
-                            (it.customerPhone ?: "Khách lẻ") == phone 
+                        val customerOrders = result.data.filter {
+                            it.status == com.wavehouse.domain.model.OrderStatus.DEBT &&
+                            (it.customerPhone ?: "Khách lẻ") == phone
                         }
-                        val name = customerOrders.firstOrNull { !it.customerName.isNullOrBlank() }?.customerName 
+                        val name = customerOrders.firstOrNull { !it.customerName.isNullOrBlank() }?.customerName
                             ?: if (phone == "Khách lẻ") "Khách hàng vãng lai" else "Khách hàng"
-                            
-                        _uiState.update { 
+
+                        _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 orders = customerOrders,
@@ -79,22 +91,33 @@ class DebtPaymentViewModel @Inject constructor(
         }
     }
 
-    fun submitPayment(amount: Double) {
+    fun submitPayment(amount: Double, paymentMethod: com.wavehouse.domain.model.PaymentMethod, note: String) {
         if (amount <= 0) return
-        
+
         viewModelScope.launch {
             _uiState.update { it.copy(isPaying = true, error = null) }
-            
+
+            val state = _uiState.value
             var remainingAmount = amount
-            // Sort by oldest first to clear old debt
-            val ordersToPay = _uiState.value.orders.sortedBy { it.createdAt }
-            
+            // Sort by oldest first to clear old debt (waterfall)
+            val ordersToPay = state.orders.sortedBy { it.createdAt }
+
             for (order in ordersToPay) {
                 if (remainingAmount <= 0) break
-                
-                val payForThisOrder = min(remainingAmount, order.debtAmount)
+
+                val payForThisOrder = minOf(remainingAmount, order.debtAmount)
                 if (payForThisOrder > 0) {
-                    when (val result = payDebtUseCase(order.id, payForThisOrder)) {
+                    when (val result = payDebtUseCase(
+                        orderId = order.id,
+                        paymentAmount = payForThisOrder,
+                        warehouseId = state.warehouseId,
+                        customerPhone = state.phone,
+                        customerName = state.name.takeIf { it != "Khách hàng vãng lai" },
+                        paymentMethod = paymentMethod,
+                        note = note.takeIf { it.isNotBlank() },
+                        createdBy = state.createdById,
+                        createdByName = state.createdByName
+                    )) {
                         is ApiResult.Success -> {
                             remainingAmount -= payForThisOrder
                         }
@@ -106,7 +129,7 @@ class DebtPaymentViewModel @Inject constructor(
                     }
                 }
             }
-            
+
             _uiState.update { it.copy(isPaying = false, isPaymentSuccess = true) }
         }
     }

@@ -223,8 +223,10 @@ data class Order(
     val totalAmount: Double,
     val paymentMethod: PaymentMethod,
     val status: OrderStatus = OrderStatus.PENDING,
-    val paidAmount: Double = totalAmount, 
+    val paidAmount: Double = totalAmount,
     val debtAmount: Double = 0.0,
+    /** Đánh dấu đơn này từng ở trạng thái DEBT — giữ lại để query lịch sử kể cả khi đã PAID */
+    val wasDebt: Boolean = false,
     val createdBy: String,
     val createdByName: String,
     val createdAt: Long = System.currentTimeMillis(),
@@ -259,6 +261,30 @@ data class OrderItem(
     val lineCost: Double get() = costPrice * quantity
     val lineProfit: Double get() = lineTotal - lineCost
 }
+
+// ═══════════════════════════════════════════════════════════════
+// DEBT TRANSACTION (Lịch sử thu nợ)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Một lần thu nợ — ghi lại từng khoản thanh toán công nợ.
+ * Không thay thế Order; chỉ là audit log cho lịch sử.
+ */
+data class DebtTransaction(
+    val id: String,
+    val warehouseId: String,
+    /** ID đơn hàng được thu nợ (nhiều DebtTransaction có thể cùng orderId khi trả nhiều lần) */
+    val orderId: String,
+    val customerPhone: String,
+    val customerName: String? = null,
+    /** Số tiền thực thu trong lần này */
+    val amount: Double,
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+    val note: String? = null,
+    val createdBy: String,
+    val createdByName: String,
+    val createdAt: Long = System.currentTimeMillis()
+)
 
 // ═══════════════════════════════════════════════════════════════
 // WAREHOUSE

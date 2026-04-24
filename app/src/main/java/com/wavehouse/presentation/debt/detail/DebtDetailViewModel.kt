@@ -4,7 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wavehouse.core.network.ApiResult
+import com.wavehouse.domain.model.DebtTransaction
 import com.wavehouse.domain.model.Order
+import com.wavehouse.domain.model.OrderStatus
 import com.wavehouse.domain.repository.OrderRepository
 import com.wavehouse.domain.usecase.auth.GetCurrentUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +20,7 @@ data class DebtDetailUiState(
     val phone: String = "",
     val name: String = "",
     val orders: List<Order> = emptyList(),
+    val transactions: List<DebtTransaction> = emptyList(), // lịch sử các lần thu nợ
     val isLoading: Boolean = true,
     val error: String? = null
 ) {
@@ -32,15 +35,15 @@ class DebtDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val phone: String = checkNotNull(savedStateHandle["phone"])
-    
+
     private val _uiState = MutableStateFlow(DebtDetailUiState(phone = phone))
     val uiState = _uiState.asStateFlow()
 
     init {
-        loadCustomerDebt()
+        loadData()
     }
 
-    private fun loadCustomerDebt() {
+    private fun loadData() {
         viewModelScope.launch {
             val user = getCurrentUserUseCase()
             if (user == null) {
@@ -48,27 +51,38 @@ class DebtDetailViewModel @Inject constructor(
                 return@launch
             }
 
-            orderRepository.getDebtOrders(user.warehouseId).collect { result ->
-                when (result) {
-                    is ApiResult.Success -> {
-                        val customerOrders = result.data.filter { 
-                            (it.customerPhone ?: "Khách lẻ") == phone 
+            // ── Load debt orders ──────────────────────────────────────────────
+            launch {
+                orderRepository.getDebtOrders(user.warehouseId).collect { result ->
+                    when (result) {
+                        is ApiResult.Success -> {
+                            // Chỉ lấy đơn đang còn nợ (DEBT) của khách này
+                            val customerOrders = result.data.filter {
+                                it.status == OrderStatus.DEBT &&
+                                (it.customerPhone ?: "Khách lẻ") == phone
+                            }
+                            val name = customerOrders
+                                .firstOrNull { !it.customerName.isNullOrBlank() }?.customerName
+                                ?: if (phone == "Khách lẻ") "Khách hàng vãng lai" else "Khách hàng"
+
+                            _uiState.update {
+                                it.copy(isLoading = false, orders = customerOrders, name = name)
+                            }
                         }
-                        val name = customerOrders.firstOrNull { !it.customerName.isNullOrBlank() }?.customerName 
-                            ?: if (phone == "Khách lẻ") "Khách hàng vãng lai" else "Khách hàng"
-                            
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false,
-                                orders = customerOrders,
-                                name = name
-                            )
+                        is ApiResult.Error -> _uiState.update {
+                            it.copy(error = result.message, isLoading = false)
                         }
+                        ApiResult.Loading -> _uiState.update { it.copy(isLoading = true) }
                     }
-                    is ApiResult.Error -> _uiState.update {
-                        it.copy(error = result.message, isLoading = false)
+                }
+            }
+
+            // ── Load debt transactions (lịch sử thu nợ thực tế) ─────────────
+            launch {
+                orderRepository.getDebtTransactions(user.warehouseId, phone).collect { result ->
+                    if (result is ApiResult.Success) {
+                        _uiState.update { it.copy(transactions = result.data) }
                     }
-                    ApiResult.Loading -> _uiState.update { it.copy(isLoading = true) }
                 }
             }
         }

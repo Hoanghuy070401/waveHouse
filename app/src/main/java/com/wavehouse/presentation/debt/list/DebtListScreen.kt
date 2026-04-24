@@ -1,5 +1,7 @@
 package com.wavehouse.presentation.debt.list
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -91,6 +93,11 @@ fun DebtListScreen(
                 val tabs = listOf("Tất cả", "Quá hạn", "Đã thu xong")
                 tabs.forEachIndexed { index, title ->
                     val isSelected = uiState.filterTab == index
+                    val tabColor by animateColorAsState(
+                        targetValue = if (isSelected) Color(0xFF006D37) else Color.Gray,
+                        animationSpec = tween(200),
+                        label = "tab_color_$index"
+                    )
                     Column(
                         modifier = Modifier.clickable { viewModel.onFilterTabChanged(index) },
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -98,16 +105,20 @@ fun DebtListScreen(
                         Text(
                             text = title,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                            color = if (isSelected) Color(0xFF006D37) else Color.Gray,
+                            color = tabColor,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        if (isSelected) {
-                            Box(modifier = Modifier
+                        // Always reserve 4dp height — fill green when selected, transparent when not
+                        Box(
+                            modifier = Modifier
                                 .height(4.dp)
                                 .width(32.dp)
-                                .background(Color(0xFF006D37), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)))
-                        }
+                                .background(
+                                    if (isSelected) Color(0xFF006D37) else Color.Transparent,
+                                    RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+                                )
+                        )
                     }
                 }
             }

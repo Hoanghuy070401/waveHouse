@@ -17,11 +17,13 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
+
 class OrderRepositoryImpl @Inject constructor(
     private val database: FirebaseDatabase
 ) : OrderRepository {
 
     private val ordersRef = database.getReference("orders")
+    private val debtTransactionsRef = database.getReference("debt_transactions")
 
     override suspend fun createOrder(order: Order): ApiResult<String> = safeApiCall {
         val orderId = ordersRef.push().key ?: UUID.randomUUID().toString()
@@ -174,25 +176,53 @@ class OrderRepositoryImpl @Inject constructor(
         ).await()
     }
 
-    override suspend fun payDebt(orderId: String, paymentAmount: Double): ApiResult<Unit> = safeApiCall {
+    override suspend fun payDebt(
+        orderId: String,
+        paymentAmount: Double,
+        warehouseId: String,
+        customerPhone: String,
+        customerName: String?,
+        paymentMethod: PaymentMethod,
+        note: String?,
+        createdBy: String,
+        createdByName: String
+    ): ApiResult<Unit> = safeApiCall {
         val snapshot = ordersRef.child(orderId).get().await()
         val currentPaid = snapshot.child("paidAmount").getValue(Double::class.java) ?: 0.0
         val currentDebt = snapshot.child("debtAmount").getValue(Double::class.java) ?: 0.0
-        
+
         val newPaid = currentPaid + paymentAmount
         val newDebt = (currentDebt - paymentAmount).coerceAtLeast(0.0)
         val finalStatus = if (newDebt <= 0) OrderStatus.PAID else OrderStatus.DEBT
-        
-        val updates = mutableMapOf<String, Any?>(
-            "paidAmount" to newPaid,
-            "debtAmount" to newDebt,
-            "status" to finalStatus.name
+
+        // ── Build atomic batch: cập nhật Order + tạo DebtTransaction ─────
+        val txnId = debtTransactionsRef.push().key ?: UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+
+        val batchUpdates = hashMapOf<String, Any?>(
+            "orders/$orderId/paidAmount" to newPaid,
+            "orders/$orderId/debtAmount" to newDebt,
+            "orders/$orderId/status" to finalStatus.name,
+            "orders/$orderId/wasDebt" to true, // giữ dấu kể cả khi PAID
+            "debt_transactions/$txnId/id" to txnId,
+            "debt_transactions/$txnId/warehouseId" to warehouseId,
+            "debt_transactions/$txnId/orderId" to orderId,
+            "debt_transactions/$txnId/customerPhone" to customerPhone,
+            "debt_transactions/$txnId/customerName" to customerName,
+            "debt_transactions/$txnId/amount" to paymentAmount,
+            "debt_transactions/$txnId/paymentMethod" to paymentMethod.name,
+            "debt_transactions/$txnId/note" to note,
+            "debt_transactions/$txnId/createdBy" to createdBy,
+            "debt_transactions/$txnId/createdByName" to createdByName,
+            "debt_transactions/$txnId/createdAt" to now
         )
+
         if (finalStatus == OrderStatus.PAID) {
-            updates["paidAt"] = System.currentTimeMillis()
+            batchUpdates["orders/$orderId/paidAt"] = now
         }
-        
-        ordersRef.child(orderId).updateChildren(updates).await()
+
+        database.reference.updateChildren(batchUpdates).await()
+        Timber.d("payDebt: order=$orderId paid=$paymentAmount remaining=$newDebt txn=$txnId")
     }
 
     override suspend fun cancelOrder(orderId: String): ApiResult<Unit> = safeApiCall {
@@ -226,10 +256,37 @@ class OrderRepositoryImpl @Inject constructor(
         val query = ordersRef.orderByChild("warehouseId").equalTo(warehouseId)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Bao gồm cả đơn đang nợ (DEBT) và đơn đã trả hết (wasDebt=true + PAID)
+                // — giúp tab "Đã thu xong" hiển được lịch sử khách đã clear nợ
                 val orders = snapshot.children.mapNotNull { it.toOrder() }
-                    .filter { it.status == OrderStatus.DEBT }
+                    .filter { it.status == OrderStatus.DEBT || it.wasDebt }
                     .sortedByDescending { it.createdAt }
                 trySend(ApiResult.Success(orders))
+            }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(ApiResult.Error(error.message))
+            }
+        }
+        query.addValueEventListener(listener)
+        awaitClose { query.removeEventListener(listener) }
+    }
+
+    override fun getDebtTransactions(
+        warehouseId: String,
+        customerPhone: String
+    ): Flow<ApiResult<List<DebtTransaction>>> = callbackFlow {
+        trySend(ApiResult.Loading)
+        // Query bằng warehouseId index (cần thêm index trong Firebase rules nếu cần scale)
+        val query = debtTransactionsRef
+            .orderByChild("warehouseId")
+            .equalTo(warehouseId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val txns = snapshot.children
+                    .mapNotNull { it.toDebtTransaction() }
+                    .filter { it.customerPhone == customerPhone }
+                    .sortedByDescending { it.createdAt }
+                trySend(ApiResult.Success(txns))
             }
             override fun onCancelled(error: DatabaseError) {
                 trySend(ApiResult.Error(error.message))
@@ -289,16 +346,80 @@ class OrderRepositoryImpl @Inject constructor(
                 totalAmount = child("totalAmount").getValue(Double::class.java) ?: 0.0,
                 paidAmount = child("paidAmount").getValue(Double::class.java) ?: child("totalAmount").getValue(Double::class.java) ?: 0.0,
                 debtAmount = child("debtAmount").getValue(Double::class.java) ?: 0.0,
+                wasDebt = child("wasDebt").getValue(Boolean::class.java) ?: false,
                 paymentMethod = PaymentMethod.valueOf(child("paymentMethod").getValue(String::class.java) ?: "CASH"),
                 status = OrderStatus.valueOf(child("status").getValue(String::class.java) ?: "PENDING"),
                 createdBy = child("createdBy").getValue(String::class.java) ?: "",
                 createdByName = child("createdByName").getValue(String::class.java) ?: "",
                 createdAt = child("createdAt").getValue(Long::class.java) ?: 0L,
-                paidAt = child("paidAt").getValue(Long::class.java)
+                paidAt = child("paidAt").getValue(Long::class.java),
+                customerName = child("customerName").getValue(String::class.java),
+                customerPhone = child("customerPhone").getValue(String::class.java),
+                note = child("note").getValue(String::class.java),
+                discountAmount = child("discountAmount").getValue(Double::class.java) ?: 0.0
             )
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse order: $key")
             null
         }
+    }
+
+    private fun DataSnapshot.toDebtTransaction(): DebtTransaction? {
+        return try {
+            DebtTransaction(
+                id = child("id").getValue(String::class.java) ?: key ?: "",
+                warehouseId = child("warehouseId").getValue(String::class.java) ?: "",
+                orderId = child("orderId").getValue(String::class.java) ?: "",
+                customerPhone = child("customerPhone").getValue(String::class.java) ?: "",
+                customerName = child("customerName").getValue(String::class.java),
+                amount = child("amount").getValue(Double::class.java) ?: 0.0,
+                paymentMethod = try {
+                    PaymentMethod.valueOf(child("paymentMethod").getValue(String::class.java) ?: "CASH")
+                } catch (_: Exception) { PaymentMethod.CASH },
+                note = child("note").getValue(String::class.java),
+                createdBy = child("createdBy").getValue(String::class.java) ?: "",
+                createdByName = child("createdByName").getValue(String::class.java) ?: "",
+                createdAt = child("createdAt").getValue(Long::class.java) ?: 0L
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse debt_transaction: $key")
+            null
+        }
+    }
+
+    override suspend fun cleanupExpiredWasDebtOrders(
+        warehouseId: String,
+        olderThanDays: Int
+    ): ApiResult<Unit> = safeApiCall {
+        val cutoff = System.currentTimeMillis() - olderThanDays.toLong() * 24 * 60 * 60 * 1000
+
+        // Query tất cả đơn của warehouse rồi filter client-side
+        // (Firebase RTDB không hỗ trợ multi-field query)
+        val snapshot = ordersRef
+            .orderByChild("warehouseId")
+            .equalTo(warehouseId)
+            .get()
+            .await()
+
+        val expiredOrders = snapshot.children
+            .mapNotNull { it.toOrder() }
+            .filter { order ->
+                order.wasDebt &&
+                order.status != OrderStatus.DEBT &&
+                (order.paidAt ?: 0L) < cutoff
+            }
+
+        if (expiredOrders.isEmpty()) {
+            Timber.d("cleanupExpiredWasDebtOrders: nothing to clean for $warehouseId")
+            return@safeApiCall
+        }
+
+        // Batch reset wasDebt = false — đơn này sẽ không còn xuất hiện trong getDebtOrders
+        val batchUpdates = hashMapOf<String, Any?>()
+        for (order in expiredOrders) {
+            batchUpdates["orders/${order.id}/wasDebt"] = false
+        }
+        database.reference.updateChildren(batchUpdates).await()
+        Timber.d("cleanupExpiredWasDebtOrders: reset ${expiredOrders.size} expired orders (>${olderThanDays}d)")
     }
 }

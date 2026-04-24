@@ -117,13 +117,48 @@ interface OrderRepository {
     suspend fun cancelOrder(orderId: String): ApiResult<Unit>
 
     fun getOrders(warehouseId: String, limit: Int = 50): Flow<ApiResult<List<Order>>>
+
+    /**
+     * Trả về tất cả đơn có [status=DEBT] hoặc [wasDebt=true] cho một kho.
+     * Bạn ViewModels tự filter theo tab — DEBT (nợ mới) hay wasDebt+PAID (đã thu xong).
+     */
     fun getDebtOrders(warehouseId: String): Flow<ApiResult<List<Order>>>
 
-    suspend fun payDebt(orderId: String, paymentAmount: Double): ApiResult<Unit>
+    /**
+     * Ghi một lần thu nợ vào collection `debt_transactions` và cập nhật Order.
+     */
+    suspend fun payDebt(
+        orderId: String,
+        paymentAmount: Double,
+        warehouseId: String,
+        customerPhone: String,
+        customerName: String?,
+        paymentMethod: PaymentMethod,
+        note: String?,
+        createdBy: String,
+        createdByName: String
+    ): ApiResult<Unit>
+
+    /**
+     * Lấy lịch sử các lần thu nợ của một khách hàng (theo phone).
+     */
+    fun getDebtTransactions(
+        warehouseId: String,
+        customerPhone: String
+    ): Flow<ApiResult<List<DebtTransaction>>>
 
     suspend fun getOrderById(orderId: String): ApiResult<Order>
 
     fun getTodayOrders(warehouseId: String): Flow<ApiResult<List<Order>>>
+
+    /**
+     * Xóa flag [wasDebt] khỏi các đơn đã PAID và paidAt cũ hơn [olderThanDays] ngày.
+     * Được gọi khi khởi tạo DebtListViewModel để tự dọn dẹp dữ liệu hết hạn.
+     */
+    suspend fun cleanupExpiredWasDebtOrders(
+        warehouseId: String,
+        olderThanDays: Int = 3
+    ): ApiResult<Unit>
 }
 
 /** Repository interface cho Warehouse */
