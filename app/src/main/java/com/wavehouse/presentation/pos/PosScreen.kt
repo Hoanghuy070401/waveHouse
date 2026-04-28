@@ -1017,6 +1017,7 @@ private fun PaymentBottomSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp)
                     .padding(top = 20.dp, bottom = 8.dp),
