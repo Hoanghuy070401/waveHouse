@@ -26,7 +26,11 @@ class CheckoutUseCase @Inject constructor(
         paymentMethod: PaymentMethod,
         createdBy: String,
         createdByName: String,
-        paidAmount: Double? = null
+        paidAmount: Double? = null,
+        customerName: String? = null,
+        customerPhone: String? = null,
+        debtNote: String? = null,
+        debtDueDate: Long? = null
     ): ApiResult<String> {
         if (cartItems.isEmpty()) return ApiResult.Error("Giỏ hàng trống")
 
@@ -90,7 +94,11 @@ class CheckoutUseCase @Inject constructor(
             status = status,
             createdBy = createdBy,
             createdByName = createdByName,
-            paidAt = if (status == OrderStatus.PAID) System.currentTimeMillis() else null
+            paidAt = if (status == OrderStatus.PAID) System.currentTimeMillis() else null,
+            customerName = customerName,
+            customerPhone = customerPhone,
+            note = debtNote,
+            debtDueDate = if (debtAmount > 0) debtDueDate else null
         )
 
         return orderRepository.createOrder(order)

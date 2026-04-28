@@ -40,8 +40,15 @@ import coil3.compose.AsyncImage
 import com.wavehouse.domain.model.CartItem
 import com.wavehouse.domain.model.PaymentMethod
 import com.wavehouse.domain.model.Product
+import android.app.DatePickerDialog
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
 // ── Design Tokens (Organic Ledger) ──────────────────────────────────────────
@@ -108,64 +115,26 @@ fun PosScreen(
     }
 
     if (uiState.showCashConfirmDialog) {
-        var inputStr by remember { mutableStateOf("") }
         val isQr = uiState.selectedPaymentMethod == PaymentMethod.QR
         val total = uiState.cartTotal
-        val typedValue = inputStr.replace(Regex("[^0-9]"), "").toDoubleOrNull() ?: total
-        val debt = (total - typedValue).coerceAtLeast(0.0)
-
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissCashConfirmDialog() },
-            title = { Text(if (isQr) "Xác nhận thanh toán QR" else "Thanh toán Tiền mặt", color = PrimaryGreen) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Tổng hóa đơn:", style = MaterialTheme.typography.bodyLarge)
-                        Text(total.toVnd(), fontWeight = FontWeight.Bold)
-                    }
-                    OutlinedTextField(
-                        value = inputStr,
-                        onValueChange = { inputStr = it },
-                        label = { Text("Khách thanh toán") },
-                        placeholder = { Text(total.toVnd()) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryGreen,
-                            focusedLabelColor = PrimaryGreen
-                        )
-                    )
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Ghi nợ:", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
-                        Text(debt.toVnd(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissCashConfirmDialog() }) {
-                    Text("Hủy", color = OnSurfaceVariant)
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (isQr) viewModel.startQrCheckout(typedValue)
-                        else viewModel.confirmCashCheckout(typedValue)
-                    },
-                    enabled = !uiState.isCheckingOut,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
-                ) {
-                    if (uiState.isCheckingOut) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = Color.White
-                        )
-                    } else {
-                        Text(if (isQr) "Lấy mã QR" else "Hoàn tất")
-                    }
-                }
+        PaymentBottomSheet(
+            total = total,
+            isQr = isQr,
+            isLoading = uiState.isCheckingOut,
+            enableDebt = uiState.enableDebt,
+            debtCustomerName = uiState.debtCustomerName,
+            debtCustomerPhone = uiState.debtCustomerPhone,
+            debtNote = uiState.debtNote,
+            debtDueDateMs = uiState.debtDueDateMs,
+            onDismiss = { viewModel.dismissCashConfirmDialog() },
+            onEnableDebtChange = { viewModel.setEnableDebt(it) },
+            onCustomerNameChange = { viewModel.setDebtCustomerName(it) },
+            onCustomerPhoneChange = { viewModel.setDebtCustomerPhone(it) },
+            onNoteChange = { viewModel.setDebtNote(it) },
+            onDueDateChange = { viewModel.setDebtDueDateMs(it) },
+            onConfirm = { paidAmt ->
+                if (isQr) viewModel.startQrCheckout(paidAmt)
+                else viewModel.confirmCashCheckout(paidAmt)
             }
         )
     }
@@ -962,4 +931,346 @@ private fun PaymentMethodChip(
             selectedLeadingIconColor = PrimaryGreen
         )
     )
+}
+
+// ─── Payment Bottom Sheet ────────────────────────────────────────────────────
+
+private val dateDisplayFmt = SimpleDateFormat("dd/MM/yyyy", Locale("vi", "VN"))
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PaymentBottomSheet(
+    total: Double,
+    isQr: Boolean,
+    isLoading: Boolean,
+    enableDebt: Boolean,
+    debtCustomerName: String,
+    debtCustomerPhone: String,
+    debtNote: String,
+    debtDueDateMs: Long?,
+    onDismiss: () -> Unit,
+    onEnableDebtChange: (Boolean) -> Unit,
+    onCustomerNameChange: (String) -> Unit,
+    onCustomerPhoneChange: (String) -> Unit,
+    onNoteChange: (String) -> Unit,
+    onDueDateChange: (Long?) -> Unit,
+    onConfirm: (paidAmount: Double) -> Unit
+) {
+    val context = LocalContext.current
+    var inputStr by remember { mutableStateOf("") }
+    val paidAmount = inputStr.replace(Regex("[^0-9]"), "").toDoubleOrNull() ?: total
+    val shortfall = (total - paidAmount).coerceAtLeast(0.0)
+    val hasShortfall = shortfall > 0.0 && inputStr.isNotBlank()
+    val debtFormVisible = enableDebt && hasShortfall
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val calendar = remember { Calendar.getInstance() }
+    val dateLabel = debtDueDateMs?.let {
+        calendar.timeInMillis = it
+        dateDisplayFmt.format(calendar.time)
+    } ?: ""
+
+    fun showDatePicker() {
+        val cal = Calendar.getInstance()
+        debtDueDateMs?.let { cal.timeInMillis = it }
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                val c = Calendar.getInstance()
+                c.set(year, month, day, 0, 0, 0)
+                c.set(Calendar.MILLISECOND, 0)
+                onDueDateChange(c.timeInMillis)
+            },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        ).also { it.datePicker.minDate = System.currentTimeMillis() }.show()
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = BgSurface,
+        dragHandle = null,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // ── Header ────────────────────────────────────────────────────────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(SurfaceContainerLow)
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Thanh toán", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = OnSurface)
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(36.dp).clip(CircleShape).background(SurfaceHighest)
+                ) {
+                    Icon(Icons.Filled.Close, "Đóng", tint = OnSurfaceVariant, modifier = Modifier.size(18.dp))
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 20.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // ── Total card ────────────────────────────────────────────────
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(20.dp),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("TỔNG HÓA ĐƠN", fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                            color = OnSurfaceVariant, letterSpacing = 1.5.sp)
+                        Text(total.toVnd(), fontSize = 36.sp, fontWeight = FontWeight.ExtraBold,
+                            color = PrimaryGreen, letterSpacing = (-1).sp)
+                    }
+                }
+
+                // ── Customer payment input ────────────────────────────────────
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Khách thanh toán", fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        color = OnSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
+                    Surface(color = SurfaceHigh, shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()) {
+                        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            TextField(
+                                value = inputStr,
+                                onValueChange = { inputStr = it.filter { c -> c.isDigit() } },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                placeholder = { Text(total.toVnd(), fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold, color = OutlineVariant) },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
+                                textStyle = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                            )
+                            Text("VNĐ", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Outline)
+                        }
+                    }
+                    AnimatedVisibility(visible = hasShortfall) {
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(start = 4.dp)) {
+                            Icon(Icons.Filled.Info, null, tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp))
+                            Text("Còn thiếu: ${shortfall.toVnd()}", fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+
+                // ── Debt toggle ───────────────────────────────────────────────
+                AnimatedVisibility(visible = hasShortfall) {
+                    Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()) {
+                        Row(modifier = Modifier.fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Icon(Icons.Filled.ReceiptLong, null, tint = PrimaryGreen,
+                                    modifier = Modifier.size(22.dp))
+                                Text("Ghi nợ phần còn lại", fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp, color = OnSurface)
+                            }
+                            Switch(
+                                checked = enableDebt,
+                                onCheckedChange = onEnableDebtChange,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = PrimaryGreen,
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = OutlineVariant
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // ── Debt form ─────────────────────────────────────────────────
+                AnimatedVisibility(
+                    visible = debtFormVisible,
+                    enter = fadeIn(tween(250)) + expandVertically(tween(250)),
+                    exit = fadeOut(tween(200)) + shrinkVertically(tween(200))
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        DebtFormField(label = "Tên khách nợ *") {
+                            TextField(
+                                value = debtCustomerName, onValueChange = onCustomerNameChange,
+                                modifier = Modifier.fillMaxWidth(), singleLine = true,
+                                placeholder = { Text("Nguyễn Văn A", color = OutlineVariant) },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = PrimaryGreen,
+                                    unfocusedIndicatorColor = OutlineVariant.copy(alpha = 0.5f)
+                                ),
+                                textStyle = TextStyle(fontSize = 15.sp, color = OnSurface)
+                            )
+                        }
+                        DebtFormField(label = "Số điện thoại *") {
+                            TextField(
+                                value = debtCustomerPhone, onValueChange = onCustomerPhoneChange,
+                                modifier = Modifier.fillMaxWidth(), singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                placeholder = { Text("0901234567", color = OutlineVariant) },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = PrimaryGreen,
+                                    unfocusedIndicatorColor = OutlineVariant.copy(alpha = 0.5f)
+                                ),
+                                textStyle = TextStyle(fontSize = 15.sp, color = OnSurface)
+                            )
+                        }
+                        DebtFormField(label = "Hạn thanh toán *") {
+                            Box(modifier = Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { showDatePicker() }
+                                .padding(vertical = 14.dp, horizontal = 4.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically) {
+                                    Text(dateLabel.ifBlank { "Chọn ngày..." }, fontSize = 15.sp,
+                                        color = if (dateLabel.isBlank()) OutlineVariant else OnSurface)
+                                    Icon(Icons.Filled.CalendarMonth, null, tint = Outline,
+                                        modifier = Modifier.size(20.dp))
+                                }
+                                HorizontalDivider(modifier = Modifier.align(Alignment.BottomStart),
+                                    color = OutlineVariant.copy(alpha = 0.5f))
+                            }
+                        }
+                        DebtFormField(label = "Ghi chú (Tùy chọn)") {
+                            TextField(
+                                value = debtNote, onValueChange = onNoteChange,
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp),
+                                placeholder = { Text("Khách quen, giao thứ 2...", color = OutlineVariant, fontSize = 14.sp) },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = PrimaryGreen,
+                                    unfocusedIndicatorColor = OutlineVariant.copy(alpha = 0.5f)
+                                ),
+                                textStyle = TextStyle(fontSize = 14.sp, color = OnSurface)
+                            )
+                        }
+                    }
+                }
+
+                // ── Summary ───────────────────────────────────────────────────
+                Surface(color = SurfaceContainerLow.copy(alpha = 0.7f),
+                    shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Khách trả", fontSize = 14.sp, color = OnSurfaceVariant)
+                            Text(
+                                if (inputStr.isBlank()) total.toVnd()
+                                else paidAmount.coerceAtMost(total).toVnd(),
+                                fontWeight = FontWeight.Bold, fontSize = 14.sp, color = OnSurface
+                            )
+                        }
+                        AnimatedVisibility(visible = debtFormVisible) {
+                            Row(modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Ghi nợ", fontSize = 14.sp, color = OnSurfaceVariant)
+                                Text(shortfall.toVnd(), fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp, color = Color(0xFF865300))
+                            }
+                        }
+                        AnimatedVisibility(visible = debtFormVisible && dateLabel.isNotBlank()) {
+                            Column {
+                                HorizontalDivider(color = OutlineVariant.copy(alpha = 0.3f))
+                                Spacer(Modifier.height(8.dp))
+                                Row(modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Hạn trả", fontSize = 14.sp, color = OnSurfaceVariant)
+                                    Text(dateLabel, fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp, color = OnSurface)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(4.dp))
+            }
+
+            // ── Footer ────────────────────────────────────────────────────────
+            Row(modifier = Modifier.fillMaxWidth()
+                .background(Color.White.copy(alpha = 0.9f))
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    shape = RoundedCornerShape(50),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, OutlineVariant)
+                ) {
+                    Text("Hủy", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = OnSurface)
+                }
+                Button(
+                    onClick = {
+                        val paid = if (inputStr.isBlank()) total else paidAmount.coerceAtMost(total)
+                        onConfirm(paid)
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.weight(2f).height(52.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize().background(
+                        brush = if (!isLoading) Brush.linearGradient(listOf(PrimaryGreen, PrimaryContainer))
+                        else Brush.linearGradient(listOf(Color.Gray, Color.Gray)),
+                        shape = RoundedCornerShape(50)
+                    ), contentAlignment = Alignment.Center) {
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White,
+                                modifier = Modifier.size(22.dp), strokeWidth = 2.5.dp)
+                        } else {
+                            Text(if (isQr) "Lấy mã QR" else "Hoàn tất",
+                                fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun DebtFormField(label: String, content: @Composable () -> Unit) {
+    Surface(color = SurfaceHighest, shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                color = OnSurfaceVariant, modifier = Modifier.padding(bottom = 2.dp))
+            content()
+        }
+    }
 }

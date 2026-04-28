@@ -74,12 +74,18 @@ class OrderRepositoryImpl @Inject constructor(
             "totalAmount"    to order.totalAmount,
             "paidAmount"     to order.paidAmount,
             "debtAmount"     to order.debtAmount,
+            "wasDebt"        to order.wasDebt,
             "paymentMethod"  to order.paymentMethod.name,
             "status"         to order.status.name,
             "createdBy"      to order.createdBy,
             "createdByName"  to order.createdByName,
             "createdAt"      to order.createdAt,
             "paidAt"         to order.paidAt,
+            "customerName"   to order.customerName,
+            "customerPhone"  to order.customerPhone,
+            "note"           to order.note,
+            "discountAmount" to order.discountAmount,
+            "debtDueDate"    to order.debtDueDate,
             "items"          to order.items.map {
                 mapOf(
                     "productId"   to it.productId,
@@ -356,7 +362,8 @@ class OrderRepositoryImpl @Inject constructor(
                 customerName = child("customerName").getValue(String::class.java),
                 customerPhone = child("customerPhone").getValue(String::class.java),
                 note = child("note").getValue(String::class.java),
-                discountAmount = child("discountAmount").getValue(Double::class.java) ?: 0.0
+                discountAmount = child("discountAmount").getValue(Double::class.java) ?: 0.0,
+                debtDueDate = child("debtDueDate").getValue(Long::class.java)
             )
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse order: $key")

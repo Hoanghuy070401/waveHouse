@@ -238,7 +238,9 @@ data class Order(
     /** Ghi chú đơn hàng (yêu cầu đặc biệt, giao hàng…) */
     val note: String? = null,
     /** Chiết khấu/giảm giá trực tiếp trên đơn (không tính trong items) */
-    val discountAmount: Double = 0.0
+    val discountAmount: Double = 0.0,
+    /** Hạn thanh toán nợ (timestamp ms) — null = không có hạn */
+    val debtDueDate: Long? = null
 ) {
     val itemCount: Int get() = items.sumOf { it.quantity }.toInt()
     /** Subtotal trước giảm giá */

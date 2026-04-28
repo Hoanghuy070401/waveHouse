@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#eff6ec",
+                    "on-primary-fixed": "#00210c",
+                    "surface-container-high": "#e3eae0",
+                    "secondary-fixed-dim": "#b5c8df",
+                    "secondary": "#4e6073",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#005228",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#dde5db",
+                    "on-secondary-container": "#526478",
+                    "outline": "#6d7a6e",
+                    "surface-container": "#e9f0e6",
+                    "inverse-on-surface": "#ecf3e9",
+                    "tertiary-fixed": "#ffddb9",
+                    "primary-fixed-dim": "#61de8a",
+                    "error-container": "#ffdad6",
+                    "on-primary-container": "#00391a",
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#bccabc",
+                    "on-background": "#171d17",
+                    "surface-variant": "#dde5db",
+                    "on-error": "#ffffff",
+                    "on-surface": "#171d17",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#3d4a3f",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb961",
+                    "on-tertiary-fixed": "#2b1700",
+                    "primary-container": "#27ae60",
+                    "on-secondary-fixed": "#091d2e",
+                    "inverse-surface": "#2b322c",
+                    "primary-fixed": "#7efba4",
+                    "on-tertiary-container": "#472a00",
+                    "secondary-fixed": "#d1e4fb",
+                    "primary": "#006d37",
+                    "background": "#f4fbf1",
+                    "surface-dim": "#d5dcd2",
+                    "inverse-primary": "#61de8a",
+                    "surface": "#f4fbf1",
+                    "surface-tint": "#006d37",
+                    "secondary-container": "#cfe2f9",
+                    "on-tertiary-fixed-variant": "#663e00",
+                    "tertiary": "#865300",
+                    "on-secondary-fixed-variant": "#36485b",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#d58700",
+                    "surface-bright": "#f4fbf1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Work Sans"],
+                    "display": ["Work Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4fbf1;
+            color: #171d17;
+        }
+        .headline-font {
+            font-family: 'Work Sans', sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="max-w-xl mx-auto min-h-screen bg-surface flex flex-col relative shadow-2xl shadow-on-background/5">
+<header class="flex items-center justify-between px-6 py-5 bg-surface-container-low sticky top-0 z-50">
+<h1 class="headline-font font-bold text-2xl tracking-tight text-on-surface">Thanh toán</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">close</span>
+</button>
+</header>
+<main class="flex-grow p-6 space-y-8 pb-32 overflow-y-auto no-scrollbar">
+<section class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<div class="flex flex-col items-center justify-center space-y-2">
+<span class="text-sm font-medium text-on-surface-variant uppercase tracking-widest headline-font">Tổng hóa đơn</span>
+<div class="headline-font font-extrabold text-4xl text-primary">50.000đ</div>
+</div>
+</section>
+<section class="space-y-4">
+<div class="flex flex-col space-y-2">
+<label class="text-sm font-semibold headline-font text-on-surface-variant ml-1">Khách thanh toán</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-high border-none rounded-xl px-4 py-4 text-xl font-bold headline-font text-on-surface focus:ring-2 focus:ring-primary-container transition-all" type="text" value="30.000đ"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant headline-font font-medium">VNĐ</div>
+</div>
+<div class="flex items-center space-x-2 text-error px-1">
+<span class="material-symbols-outlined text-[18px]">info</span>
+<span class="text-sm font-medium">Còn thiếu: 20.000đ</span>
+</div>
+</div>
+</section>
+<section class="flex items-center justify-between bg-surface-container-low p-4 rounded-xl">
+<div class="flex items-center space-x-3">
+<span class="material-symbols-outlined text-primary">receipt_long</span>
+<span class="font-semibold text-on-surface headline-font">Ghi nợ phần còn lại</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-14 h-8 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</section>
+<section class="space-y-6 animate-fade-in">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-sm font-semibold headline-font text-on-surface-variant ml-1">Tên khách nợ *</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary transition-all" type="text" value="Nguyễn Văn A"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-semibold headline-font text-on-surface-variant ml-1">Số điện thoại *</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary transition-all" type="text" value="0901234567"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-semibold headline-font text-on-surface-variant ml-1">Hạn thanh toán *</label>
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary transition-all" type="text" value="30/04/2026"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant">calendar_month</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-semibold headline-font text-on-surface-variant ml-1">Ghi chú (Tùy chọn)</label>
+<textarea class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary transition-all resize-none" rows="2">Khách quen</textarea>
+</div>
+</section>
+<section class="bg-surface-container-low/50 p-6 rounded-xl space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm font-medium">Khách trả</span>
+<span class="text-on-surface font-bold headline-font">30.000đ</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm font-medium">Ghi nợ</span>
+<span class="text-tertiary font-bold headline-font">20.000đ</span>
+</div>
+<div class="pt-3 border-t border-outline-variant/30 flex justify-between items-center">
+<span class="text-on-surface-variant text-sm font-medium">Hạn trả</span>
+<span class="text-on-surface font-medium headline-font">30/04/2026</span>
+</div>
+</section>
+</main>
+<footer class="fixed bottom-0 left-0 right-0 max-w-xl mx-auto p-6 bg-surface-container-lowest/80 backdrop-blur-xl flex gap-4 z-50">
+<button class="flex-1 py-4 px-6 rounded-full border-2 border-outline-variant text-on-surface font-bold headline-font hover:bg-surface-container-high transition-all active:scale-95 duration-150">
+                Hủy
+            </button>
+<button class="flex-[2] py-4 px-6 rounded-full bg-gradient-to-br from-[#006d37] to-[#27ae60] text-white font-bold headline-font shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 duration-150">
+                Hoàn tất
+            </button>
+</footer>
+</div>
+<div class="hidden lg:fixed lg:right-10 lg:top-10 lg:w-80 lg:flex flex-col space-y-6">
+<div class="p-6 bg-surface-container-low rounded-xl">
+<h3 class="headline-font font-bold text-lg mb-4">Chi tiết kho</h3>
+<img class="w-full h-40 object-cover rounded-lg mb-4" data-alt="Modern high-angle view of a neat warehouse shelf stocked with fresh fruits and vegetables under bright clinical lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBY8hZIw5xp92Sa5TUgBh61xYmpQVtwUnLgB9H4r6cZm5u9V_Nc6j3zQUAN5GAwi4PhdNEXOVocBkATGbfjXPNaHJzsqvXHLSLMFmHPygBz-orhsmCAhjLnoewYr72-wMpREE5Lj6rpSGxf8WxzMvqSo_96Pwg4CBZgy7GtFR4QTnSs5ZVMGqDyLf6R4N0MD-yoVDXMvYQsHbSbnuIISKuUx52royprTMsnHhnO6vAcjrah2v9UXS1mVME9ql7DTwAL58Qfcl-6TuQ"/>
+<p class="text-sm text-on-surface-variant leading-relaxed">Đang xử lý giao dịch cho lô hàng Nông sản Đà Lạt. Đảm bảo thông tin nợ được cập nhật chính xác vào hệ thống quản lý FreshStock.</p>
+</div>
+<div class="p-6 bg-tertiary-fixed rounded-xl flex items-start space-x-4">
+<span class="material-symbols-outlined text-tertiary">warning</span>
+<div>
+<h4 class="headline-font font-bold text-on-tertiary-fixed">Lưu ý ghi nợ</h4>
+<p class="text-xs text-on-tertiary-fixed-variant mt-1">Các khoản nợ trên 1.000.000đ cần có xác nhận quản lý trực tiếp trước khi hoàn tất giao dịch.</p>
+</div>
+</div>
+</div>
+</body></html>

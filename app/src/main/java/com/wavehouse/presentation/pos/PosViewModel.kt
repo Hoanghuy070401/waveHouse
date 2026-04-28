@@ -36,7 +36,13 @@ data class PosUiState(
     val pendingOrderItemCount: Int = 0,
     val isConfirmingPayment: Boolean = false,
     val paymentFlowError: String? = null,
-    val lastCheckoutMethod: PaymentMethod? = null
+    val lastCheckoutMethod: PaymentMethod? = null,
+    // ── Debt form state ────────────────────────────────────────────────────────
+    val enableDebt: Boolean = false,
+    val debtCustomerName: String = "",
+    val debtCustomerPhone: String = "",
+    val debtNote: String = "",
+    val debtDueDateMs: Long? = null,
 ) {
     val cartTotal: Double get() = cartItems.sumOf { it.lineTotal }
     val cartCount: Int get() = cartItems.sumOf { it.quantity }.toInt()
@@ -281,6 +287,23 @@ class PosViewModel @Inject constructor(
         _uiState.update { it.copy(showCashConfirmDialog = false) }
     }
 
+    // ── Debt form helpers ──────────────────────────────────────────────────────
+    fun setEnableDebt(enabled: Boolean) = _uiState.update { it.copy(enableDebt = enabled) }
+    fun setDebtCustomerName(v: String) = _uiState.update { it.copy(debtCustomerName = v) }
+    fun setDebtCustomerPhone(v: String) = _uiState.update { it.copy(debtCustomerPhone = v) }
+    fun setDebtNote(v: String) = _uiState.update { it.copy(debtNote = v) }
+    fun setDebtDueDateMs(ms: Long?) = _uiState.update { it.copy(debtDueDateMs = ms) }
+
+    private fun resetDebtForm() = _uiState.update {
+        it.copy(
+            enableDebt = false,
+            debtCustomerName = "",
+            debtCustomerPhone = "",
+            debtNote = "",
+            debtDueDateMs = null
+        )
+    }
+
     fun confirmCashCheckout(paidAmount: Double) {
         val user = currentUser ?: return
         val state = _uiState.value
@@ -298,6 +321,13 @@ class PosViewModel @Inject constructor(
                 )
             }
 
+            // Resolve debt info
+            val debt = total - paidAmount
+            val custName = if (state.enableDebt && debt > 0) state.debtCustomerName.takeIf { it.isNotBlank() } else null
+            val custPhone = if (state.enableDebt && debt > 0) state.debtCustomerPhone.takeIf { it.isNotBlank() } else null
+            val debtNote = if (state.enableDebt && debt > 0) state.debtNote.takeIf { it.isNotBlank() } else null
+            val debtDue = if (state.enableDebt && debt > 0) state.debtDueDateMs else null
+
             when (
                 val result = checkoutUseCase(
                     cartItems = state.cartItems,
@@ -305,20 +335,27 @@ class PosViewModel @Inject constructor(
                     paymentMethod = PaymentMethod.CASH,
                     createdBy = user.id,
                     createdByName = user.name,
-                    paidAmount = paidAmount
+                    paidAmount = paidAmount,
+                    customerName = custName,
+                    customerPhone = custPhone,
+                    debtNote = debtNote,
+                    debtDueDate = debtDue
                 )
             ) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(
-                        isCheckingOut = false,
-                        checkoutSuccess = true,
-                        checkoutOrderId = result.data,
-                        cartItems = emptyList(),
-                        pendingOrderAmount = total,
-                        pendingOrderItemCount = itemCount,
-                        error = null,
-                        lastCheckoutMethod = PaymentMethod.CASH
-                    )
+                is ApiResult.Success -> {
+                    resetDebtForm()
+                    _uiState.update {
+                        it.copy(
+                            isCheckingOut = false,
+                            checkoutSuccess = true,
+                            checkoutOrderId = result.data,
+                            cartItems = emptyList(),
+                            pendingOrderAmount = total,
+                            pendingOrderItemCount = itemCount,
+                            error = null,
+                            lastCheckoutMethod = PaymentMethod.CASH
+                        )
+                    }
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(
@@ -350,6 +387,13 @@ class PosViewModel @Inject constructor(
                 )
             }
 
+            // Resolve debt info for QR
+            val debt = total - paidAmount
+            val custName = if (state.enableDebt && debt > 0) state.debtCustomerName.takeIf { it.isNotBlank() } else null
+            val custPhone = if (state.enableDebt && debt > 0) state.debtCustomerPhone.takeIf { it.isNotBlank() } else null
+            val debtNote = if (state.enableDebt && debt > 0) state.debtNote.takeIf { it.isNotBlank() } else null
+            val debtDue = if (state.enableDebt && debt > 0) state.debtDueDateMs else null
+
             when (
                 val result = checkoutUseCase(
                     cartItems = state.cartItems,
@@ -357,21 +401,28 @@ class PosViewModel @Inject constructor(
                     paymentMethod = PaymentMethod.QR,
                     createdBy = user.id,
                     createdByName = user.name,
-                    paidAmount = paidAmount
+                    paidAmount = paidAmount,
+                    customerName = custName,
+                    customerPhone = custPhone,
+                    debtNote = debtNote,
+                    debtDueDate = debtDue
                 )
             ) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(
-                        isCheckingOut = false,
-                        cartItems = emptyList(),
-                        pendingOrderId = result.data,
-                        pendingOrderAmount = total,
-                        pendingOrderItemCount = itemCount,
-                        showQrSheet = true,
-                        checkoutOrderId = result.data,
-                        checkoutSuccess = false,
-                        lastCheckoutMethod = null
-                    )
+                is ApiResult.Success -> {
+                    resetDebtForm()
+                    _uiState.update {
+                        it.copy(
+                            isCheckingOut = false,
+                            cartItems = emptyList(),
+                            pendingOrderId = result.data,
+                            pendingOrderAmount = total,
+                            pendingOrderItemCount = itemCount,
+                            showQrSheet = true,
+                            checkoutOrderId = result.data,
+                            checkoutSuccess = false,
+                            lastCheckoutMethod = null
+                        )
+                    }
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(
